@@ -31,6 +31,12 @@ pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
 #Normalized distance between each wastewater facility
 facility_distance <- import(here("data", "WA", "simulated_facility_distances.csv"))
 
+#Look at how many cases per treatment plant
+hospital_counts %>%
+  group_by(treatment_plant) %>%
+  summarise(n = sum(simulated_count)) %>%
+  arrange(n)
+
 #Process data and compile model - custom function to do things neatly behind the scenes
 processed_data <- process_WA_data(
   #The raw hospital count data
@@ -40,7 +46,7 @@ processed_data <- process_WA_data(
   #Population data
   pop_data = pop_data,
   #Sites - this can be specified as a single site,( = 1), as multiple sites linked by a ;, (= "1;2;3") or as all sites (= "all")
-  sites = "all",
+  sites = "8;1",
   #How far to forecast
   forecast_horizon = 28,
   #Spatial data, if missing either omit this argument or set spatial = NA (the default) 
@@ -61,7 +67,7 @@ if(Sys.info()[[1]] == "Windows"){
 fit_this <- get_mcmc_options(
   iter_warmup = 250,
   iter_sampling = 500,
-  seed = 123
+  seed = 1
 )
 
 #Fit models
@@ -77,7 +83,7 @@ ww_fit <- wwinference(
     inf_to_count_delay = processed_data$inf_to_hosp,
     infection_feedback_pmf = processed_data$infection_feedback_pmf,
     params = processed_data$params,
-    include_ww = TRUE
+    include_ww = T
   ),
   fit_opts = fit_this,
   compiled_model = model
@@ -123,7 +129,23 @@ ww_nocor_fit <- wwinference(
   corr_structure_switch = 0
 )
 
+#Get draws
+ww_draw_normal <- get_draws_df(ww_fit)
+ww_draw_exp <- get_draws_df(ww_exp_fit)
+ww_draw_nocor <- get_draws_df(ww_nocor_fit)
 
+all_pred_draws_df <- rbind(
+  ww_draw_normal,
+  ww_draw_exp,
+  ww_draw_nocor
+)
+
+plot(ww_draw,
+     what = "predicted_counts",
+     count_data_eval = processed_data$hosp_data_eval,
+     count_data_eval_col_name = "daily_hosp_admits",
+     forecast_date = processed_data$forecast_date
+)
 
 
 

@@ -21,25 +21,37 @@ pacman::p_load(
 #Load in functions
 invisible(sapply(list.files(here("R", "functions"), full.names = T), function(x) source(x)))
 
-#Import data
+#Import data - these data sets will be missing if you have pulled this from github
+#Hospital count data
 hospital_counts <- import(here("data", "WA", "simulated_hospital_counts.csv"))
+#Wastewater sample data
 ww_data <- import(here("data", "WA", "simulated_ww_data.csv"))
+#Population data for each catchment
 pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
 
-#Process data and compile model
+#Process data and compile model - custom function to do things neatly behind the scenes
 processed_data <- process_WA_data(
+  #The raw hospital count data
   raw_hospital_counts = hospital_counts,
+  #The raw wastewater data
   raw_ww_data = ww_data,
+  #Population data
   pop_data = pop_data,
-  sites = "1;3",
+  #Sites - this can be specified as a single site,( = 1), as multiple sites linked by a ;, (= "1;2;3") or as all sites (= "all")
+  sites = "13;8",
+  #How far to forecast
   forecast_horizon = 28
 )
 
-#Compile model
-model <- wwinference::compile_model(
-  model_filepath = "C:/R/wwinference.stan",
-  include_paths = "C:/R/"
-)
+#Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
+if(Sys.info()[[1]] == "Windows"){
+  model <- wwinference::compile_model(
+    model_filepath = "C:/R/wwinference.stan",         #My custom location for the stan files 
+    include_paths = "C:/R/"
+  )
+} else {
+  model <- wwinference::compile_model()
+}
 
 #Fit models
 ww_fit <- wwinference(
@@ -82,10 +94,7 @@ hosp_fit_only <- wwinference(
   compiled_model = model
 )
 
-#Save outputs
-# save(ww_fit, file = "output_ww_WA_04102024.Rdata")
-# save(hosp_fit_only, file = "output_hospital_only_WA_04102024.Rdata")
-
+#Extract draws for analysis and plotting
 ww_draw <- get_draws(ww_fit)
 hosp_draw <- get_draws(hosp_fit_only)
 
