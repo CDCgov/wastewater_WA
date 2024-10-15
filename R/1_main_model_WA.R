@@ -38,7 +38,7 @@ processed_data <- process_WA_data(
   #Population data
   pop_data = pop_data,
   #Sites - this can be specified as a single site,( = 1), as multiple sites linked by a ;, (= "1;2;3") or as all sites (= "all")
-  sites = "all",
+  sites = "8;1",
   #How far to forecast
   forecast_horizon = 28
 )
