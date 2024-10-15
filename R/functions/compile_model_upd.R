@@ -18,7 +18,7 @@ compile_model_upd <- function(custom_location = F){
       new_folder <- paste0(if(custom_location == T) custom_location else reconstructed_path, "/wastewater_stan_files/")
       
       #Create directory
-      dir.create(new_folder)
+      if(!dir.exists(new_folder)) dir.create(new_folder)
       
       #List files to move
       these_files_to_move <- list.files(dirname(stan_location), full.names = T)
@@ -41,17 +41,17 @@ compile_model_upd <- function(custom_location = F){
                                            full.names = T)
       
       #Compile model
-      model <- wwinference::compile_model(
+      wwinference::compile_model(
         model_filepath = stan_file_new_location,         
         include_paths = dirname(stan_file_new_location)
       )
 
     } else {
-      model <- wwinference::compile_model()
+      wwinference::compile_model()
     }
     
+  } else {
+    wwinference::compile_model()
   }
   
-  model <- wwinference::compile_model()
-
 }
