@@ -44,14 +44,7 @@ processed_data <- process_WA_data(
 )
 
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
-if(Sys.info()[[1]] == "Windows"){
-  model <- wwinference::compile_model(
-    model_filepath = "C:/R/wwinference.stan",         #My custom location for the stan files 
-    include_paths = "C:/R/"
-  )
-} else {
-  model <- wwinference::compile_model()
-}
+model <- compile_model_upd()
 
 #Specify fit options
 fit_this <- get_mcmc_options(
@@ -116,7 +109,6 @@ plot(hosp_draw,
 
 #Plot
 plot_ww <- get_plot_ww_conc(ww_draw$predicted_ww, processed_data$forecast_date)
-
 plot_state_rt_ww <- get_plot_global_rt(ww_draw$global_rt, processed_data$forecast_date)
 plot_state_rt_hosp <- get_plot_global_rt(hosp_draw$global_rt, processed_data$forecast_date)
 

@@ -46,7 +46,7 @@ processed_data <- process_WA_data(
   #Population data
   pop_data = pop_data,
   #Sites - this can be specified as a single site,( = 1), as multiple sites linked by a ;, (= "1;2;3") or as all sites (= "all")
-  sites = "8;1",
+  sites = "all",
   #How far to forecast
   forecast_horizon = 28,
   #Spatial data, if missing either omit this argument or set spatial = NA (the default) 
@@ -54,14 +54,7 @@ processed_data <- process_WA_data(
 )
 
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
-if(Sys.info()[[1]] == "Windows"){
-  model <- wwinference::compile_model(
-    model_filepath = "C:/R/wwinference.stan",         #My custom location for the stan files 
-    include_paths = "C:/R/"
-  )
-} else {
-  model <- wwinference::compile_model()
-}
+model <- compile_model_upd()
 
 #Specify fit options
 fit_this <- get_mcmc_options(
@@ -156,19 +149,156 @@ ww_draw_exp <- get_draws_df(ww_exp_fit)
 ww_draw_lkj <- get_draws_df(ww_lkj_fit)
 
 all_pred_draws_df <- rbind(
-  ww_draw_normal,
-  ww_draw_exp,
-  ww_draw_nocor
+  ww_draw_nocor %>%
+    mutate(model_type = "no_cor"),
+  ww_draw_normal %>%
+    mutate(model_type = "no_spatial"),
+  ww_draw_exp %>%
+    mutate(model_type = "exp"),
+  ww_draw_lkj %>%
+    mutate(model_type = "lkj")
 )
 
-plot(ww_draw,
-     what = "predicted_counts",
-     count_data_eval = processed_data$hosp_data_eval,
-     count_data_eval_col_name = "daily_hosp_admits",
-     forecast_date = processed_data$forecast_date
-)
+#Summarise for plot
+hosp_pred <- all_pred_draws_df %>%
+  filter(name == "predicted counts") %>%
+  group_by(
+    date,
+    model_type
+  ) %>%
+  summarise(
+    lower = quantile(pred_value, 0.025, na.rm = TRUE),
+    median = median(pred_value),
+    upper = quantile(pred_value, 0.975, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+#Plot
+model_hosp_forecast <- ggplot() +
+  geom_line(data = hosp_pred,
+            mapping = aes(
+              x = date,
+              y = median,
+              color = model_type
+            )) +
+  geom_ribbon(data = hosp_pred,
+              mapping = aes(
+                x = date,
+                ymin = lower,
+                ymax = upper,
+                y = median,
+                fill = model_type
+              ),
+              alpha = 0.15) +
+  geom_point(
+    data = processed_data$hosp_data_eval %>%
+      filter(date %in% hosp_pred$date),
+    mapping = aes(
+      x = date,
+      y = daily_hosp_admits
+    ),
+    shape = 21,
+    color = "black",
+    fill = "white"
+  ) +
+  geom_vline(
+    xintercept = processed_data$forecast_date,
+    linetype = "dashed"
+  ) +
+  # facet_wrap(~model_type) +
+  theme_bw() +
+  labs(x = "",
+       y = "Hospital admissions",
+       color = "Model type",
+       fill = "Model type",
+       title = "Hospital admissions forecasts by model type",
+       caption = "Dashed line indicates when the model forecast started and white circles the data.")
+
+ggsave("figs/model_hosp_forecast.jpg", height = 4, width = 7)
+
+#Look at correlation matricies
+cor_mat <- get_cor_mat(model_fit = list(ww_nocor_fit, ww_fit, ww_exp_fit, ww_lkj_fit),
+                       model_names = c("no_correlation", "no_spatial", "exp", "lkj"))
+
+#Plot correlations
+model_correlations <- ggplot(data = cor_mat %>%
+                               filter(!model_type %in% c("no_correlation",
+                                                         "no_spatial")),
+                             mapping = aes(
+                               x = as.factor(as.numeric(gsub("Site ", "", Column))),
+                               y = as.factor(as.numeric(gsub("Site ", "", Row))),
+                               fill = median
+                             )) +
+  geom_tile() +
+  facet_wrap(~model_type) +
+  theme_bw() +
+  labs(x = "",
+       y = "",
+       fill = "Correlation")
+
+ggsave("figs/model_correlations.jpg", model_correlations, height = 4, width = 8)
+
+#Evaluate models
+#Get draws
+ww_draw_nocor <- get_draws_df(ww_nocor_fit)
+ww_draw_normal <- get_draws_df(ww_fit)
+ww_draw_exp <- get_draws_df(ww_exp_fit)
+ww_draw_lkj <- get_draws_df(ww_lkj_fit)
+
+#All predictions
+all_pred_draws_df <- rbind(
+  ww_draw_nocor %>%
+    filter(name == "predicted counts") %>%
+    mutate(
+      model = "no_cor"
+    ),
+  ww_draw_normal %>%
+    filter(name == "predicted counts") %>%
+    mutate(
+      model = "no_spatial"
+    ),
+  ww_draw_exp %>%
+    filter(name == "predicted counts") %>%
+    mutate(
+      model = "exp"
+    ),
+  ww_draw_lkj %>%
+    filter(name == "predicted counts") %>%
+    mutate(
+      model = "lkj"
+    )
+) %>%
+  rename(
+    true_value = observed_value,
+    prediction = pred_value,
+    sample = draw
+  )
 
 
+#Overall score
+score_models <- all_pred_draws_df %>%
+  filter(!is.na(true_value)) %>%
+  score() %>%
+  summarise_scores(by = "model")
 
+#Nowcasting scores
+eval_data <- processed_data$hosp_data_eval %>%
+  filter(date > processed_data$hosp_data_fit %>% 
+           pull(date) %>% 
+           max())
+
+for(i in eval_data$date){
+  all_pred_draws_df[which(all_pred_draws_df$date == i), ]$true_value <- eval_data[which(eval_data$date == i), ]$daily_hosp_admits
+}
+
+#Score it up
+model_score <- all_pred_draws_df %>%
+  filter(date > max(processed_data$hosp_data_fit$date)) %>%
+  score() %>%
+  summarise_scores(by = "model")
+
+write.csv(x = model_score,
+          file = "output/spatial_model_score.csv",
+          row.names = FALSE)
 
 
