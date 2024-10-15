@@ -38,7 +38,7 @@ processed_data <- process_WA_data(
   #Population data
   pop_data = pop_data,
   #Sites - this can be specified as a single site,( = 1), as multiple sites linked by a ;, (= "1;2;3") or as all sites (= "all")
-  sites = "13;8",
+  sites = "all",
   #How far to forecast
   forecast_horizon = 28
 )
@@ -53,27 +53,28 @@ if(Sys.info()[[1]] == "Windows"){
   model <- wwinference::compile_model()
 }
 
+#Specify fit options
+fit_this <- get_mcmc_options(
+  iter_warmup = 250,
+  iter_sampling = 500,
+  seed = 1
+)
+
 #Fit models
 ww_fit <- wwinference(
   ww_data = processed_data$ww_data_fit,
   count_data = processed_data$hosp_data_fit,
   forecast_date = processed_data$forecast_date,
-  calibration_time = as.numeric((processed_data$forecast_date - processed_data$forecast_horizon) - processed_data$time_start),
+  calibration_time = 90,
   forecast_horizon = processed_data$forecast_horizon,
   model_spec = get_model_spec(
     generation_interval = processed_data$generation_interval,
     inf_to_count_delay = processed_data$inf_to_hosp,
     infection_feedback_pmf = processed_data$infection_feedback_pmf,
-    params = processed_data$params
+    params = processed_data$params,
+    include_ww = T
   ),
-  # fit_opts = list(seed = 123,
-  #                 iter_warmup = 250,
-  #                 iter_sampling = 500),
-  fit_options <- get_mcmc_options(
-    iter_warmup = 750,
-    iter_sampling = 750,
-    seed = 1
-  ),
+  fit_opts = fit_this,
   compiled_model = model
 )
 
@@ -81,22 +82,22 @@ hosp_fit_only <- wwinference(
   ww_data = processed_data$ww_data_fit,
   count_data = processed_data$hosp_data_fit,
   forecast_date = processed_data$forecast_date,
-  calibration_time = as.numeric((processed_data$forecast_date - processed_data$forecast_horizon) - processed_data$time_start),
+  calibration_time = 90,
   forecast_horizon = processed_data$forecast_horizon,
   model_spec = get_model_spec(
     generation_interval = processed_data$generation_interval,
     inf_to_count_delay = processed_data$inf_to_hosp,
     infection_feedback_pmf = processed_data$infection_feedback_pmf,
     params = processed_data$params,
-    include_ww = FALSE
+    include_ww = F
   ),
-  fit_opts = list(seed = 123),
+  fit_opts = fit_this,
   compiled_model = model
 )
 
 #Extract draws for analysis and plotting
-ww_draw <- get_draws(ww_fit)
-hosp_draw <- get_draws(hosp_fit_only)
+ww_draw <- get_draws_df(ww_fit)
+hosp_draw <- get_draws_df(hosp_fit_only)
 
 plot(ww_draw,
      what = "predicted_counts",

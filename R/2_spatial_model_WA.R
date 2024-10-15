@@ -76,7 +76,7 @@ ww_fit <- wwinference(
   ww_data = processed_data$ww_data_fit,
   count_data = processed_data$hosp_data_fit,
   forecast_date = processed_data$forecast_date,
-  calibration_time = as.numeric((processed_data$forecast_date - processed_data$forecast_horizon) - processed_data$time_start),
+  calibration_time = 90,
   forecast_horizon = processed_data$forecast_horizon,
   model_spec = get_model_spec(
     generation_interval = processed_data$generation_interval,
@@ -89,32 +89,12 @@ ww_fit <- wwinference(
   compiled_model = model
 )
 
-#Exponential fit
-ww_exp_fit <- wwinference(
-  ww_data = processed_data$ww_data_fit,
-  count_data = processed_data$hosp_data_fit,
-  forecast_date = processed_data$forecast_date,
-  calibration_time = as.numeric((processed_data$forecast_date - processed_data$forecast_horizon) - processed_data$time_start),
-  forecast_horizon = processed_data$forecast_horizon,
-  model_spec = get_model_spec(
-    generation_interval = processed_data$generation_interval,
-    inf_to_count_delay = processed_data$inf_to_hosp,
-    infection_feedback_pmf = processed_data$infection_feedback_pmf,
-    params = processed_data$params,
-    include_ww = TRUE
-  ),
-  fit_opts = fit_this,
-  compiled_model = model,
-  dist_matrix = as.matrix(processed_data$dist_mat),
-  corr_structure_switch = 1
-)
-
 #No correlation structure
 ww_nocor_fit <- wwinference(
   ww_data = processed_data$ww_data_fit,
   count_data = processed_data$hosp_data_fit,
   forecast_date = processed_data$forecast_date,
-  calibration_time = as.numeric((processed_data$forecast_date - processed_data$forecast_horizon) - processed_data$time_start),
+  calibration_time = 90,
   forecast_horizon = processed_data$forecast_horizon,
   model_spec = get_model_spec(
     generation_interval = processed_data$generation_interval,
@@ -129,10 +109,51 @@ ww_nocor_fit <- wwinference(
   corr_structure_switch = 0
 )
 
+#Exponential fit
+ww_exp_fit <- wwinference(
+  ww_data = processed_data$ww_data_fit,
+  count_data = processed_data$hosp_data_fit,
+  forecast_date = processed_data$forecast_date,
+  calibration_time = 90,
+  forecast_horizon = processed_data$forecast_horizon,
+  model_spec = get_model_spec(
+    generation_interval = processed_data$generation_interval,
+    inf_to_count_delay = processed_data$inf_to_hosp,
+    infection_feedback_pmf = processed_data$infection_feedback_pmf,
+    params = processed_data$params,
+    include_ww = TRUE
+  ),
+  fit_opts = fit_this,
+  compiled_model = model,
+  dist_matrix = as.matrix(processed_data$dist_mat),
+  corr_structure_switch = 1
+)
+
+#LKJ fit
+ww_lkj_fit <- wwinference(
+  ww_data = processed_data$ww_data_fit,
+  count_data = processed_data$hosp_data_fit,
+  forecast_date = processed_data$forecast_date,
+  calibration_time = 90,
+  forecast_horizon = processed_data$forecast_horizon,
+  model_spec = get_model_spec(
+    generation_interval = processed_data$generation_interval,
+    inf_to_count_delay = processed_data$inf_to_hosp,
+    infection_feedback_pmf = processed_data$infection_feedback_pmf,
+    params = processed_data$params,
+    include_ww = TRUE
+  ),
+  fit_opts = fit_this,
+  compiled_model = model,
+  dist_matrix = as.matrix(processed_data$dist_mat),
+  corr_structure_switch = 2
+)
+
 #Get draws
+ww_draw_nocor <- get_draws_df(ww_nocor_fit)
 ww_draw_normal <- get_draws_df(ww_fit)
 ww_draw_exp <- get_draws_df(ww_exp_fit)
-ww_draw_nocor <- get_draws_df(ww_nocor_fit)
+ww_draw_lkj <- get_draws_df(ww_lkj_fit)
 
 all_pred_draws_df <- rbind(
   ww_draw_normal,
