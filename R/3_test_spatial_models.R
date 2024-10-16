@@ -3,21 +3,14 @@ if(!require(pacman)) install.packages("pacman")
 
 #Load packages
 pacman::p_load(
-  EpiNow2,
   rio,
   here,
-  data.table,
   arrow,
   wwinference,
-  patchwork,
-  epiparameter,
   scoringutils,
-  gtsave,
   ggh4x,
   openxlsx,
   gtsummary,
-  tidybayes,
-  cmdstanr,
   tidyverse
 )
 
