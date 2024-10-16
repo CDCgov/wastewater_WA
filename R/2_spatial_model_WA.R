@@ -234,7 +234,8 @@ model_correlations <- ggplot(data = cor_mat %>%
   theme_bw() +
   labs(x = "",
        y = "",
-       fill = "Correlation")
+       fill = "Correlation") +
+  scale_fill_viridis_c()
 
 ggsave("figs/model_correlations.jpg", model_correlations, height = 4, width = 8)
 
