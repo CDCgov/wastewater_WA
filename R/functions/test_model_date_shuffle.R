@@ -41,6 +41,9 @@ test_model_date_shuffle <- function(
   #Loop through dates
   all_done <- do.call(rbind, sapply(1:length(random_dates), function(x){
     
+    #Time start
+    time_start <- Sys.time()
+    
     #Set dates of interest
     date_to_date <- seq.Date(random_dates[x], random_dates[x] + calibration_time + forecast_horizon, by = "days")
 
@@ -61,28 +64,7 @@ test_model_date_shuffle <- function(
       #Spatial data, if missing either omit this argument or set spatial = NA (the default) 
       spatial = facility_distance
     )
-    
-    message("Fitting model without spatial information")
-    
-    #Fit models
-    #No spatial information
-    ww_fit <- wwinference(
-      ww_data = processed_data$ww_data_fit,
-      count_data = processed_data$hosp_data_fit,
-      forecast_date = processed_data$forecast_date,
-      calibration_time = calibration_time,
-      forecast_horizon = processed_data$forecast_horizon,
-      model_spec = get_model_spec(
-        generation_interval = processed_data$generation_interval,
-        inf_to_count_delay = processed_data$inf_to_hosp,
-        infection_feedback_pmf = processed_data$infection_feedback_pmf,
-        params = processed_data$params,
-        include_ww = T
-      ),
-      fit_opts = fit_options,
-      compiled_model = model
-    )
-    
+ 
     message("Fitting model without correlation structure")
     
     #No correlation structure
@@ -153,15 +135,12 @@ test_model_date_shuffle <- function(
     
     #Get draws
     ww_draw_nocor <- get_draws_df(ww_nocor_fit)
-    ww_draw_normal <- get_draws_df(ww_fit)
     ww_draw_exp <- get_draws_df(ww_exp_fit)
     ww_draw_lkj <- get_draws_df(ww_lkj_fit)
     
     all_pred_draws_df <- rbind(
       ww_draw_nocor %>%
         mutate(model_type = "no_cor"),
-      ww_draw_normal %>%
-        mutate(model_type = "no_spatial"),
       ww_draw_exp %>%
         mutate(model_type = "exp"),
       ww_draw_lkj %>%
@@ -181,7 +160,7 @@ test_model_date_shuffle <- function(
         upper = quantile(pred_value, 0.975, na.rm = TRUE),
         .groups = "drop"
       )
-    
+
     #Plot
     model_hosp_forecast <- ggplot() +
       geom_line(data = hosp_pred,
@@ -227,8 +206,8 @@ test_model_date_shuffle <- function(
     ggsave(paste0(folder, "run_", x, "_of_", length(random_dates), "_hospforecast.jpg"), model_hosp_forecast, height = 4, width = 7)
     
     #Look at correlation matricies
-    cor_mat <- get_cor_mat(model_fit = list(ww_nocor_fit, ww_fit, ww_exp_fit, ww_lkj_fit),
-                           model_names = c("no_correlation", "no_spatial", "exp", "lkj"))
+    cor_mat <- get_cor_mat(model_fit = list(ww_nocor_fit, ww_exp_fit, ww_lkj_fit),
+                           model_names = c("no_correlation", "exp", "lkj"))
     
     #Plot correlations
     model_correlations <- ggplot(data = cor_mat %>%
@@ -250,24 +229,12 @@ test_model_date_shuffle <- function(
     #output
     ggsave(paste0(folder, "run_", x, "_of_", length(random_dates), "_modelcorrelations.jpg"), model_correlations, height = 4, width = 8)
     
-    #Evaluate models
-    #Get draws
-    ww_draw_nocor <- get_draws_df(ww_nocor_fit)
-    ww_draw_normal <- get_draws_df(ww_fit)
-    ww_draw_exp <- get_draws_df(ww_exp_fit)
-    ww_draw_lkj <- get_draws_df(ww_lkj_fit)
-    
     #All predictions
     all_pred_draws_df <- rbind(
       ww_draw_nocor %>%
         filter(name == "predicted counts") %>%
         mutate(
           model = "no_cor"
-        ),
-      ww_draw_normal %>%
-        filter(name == "predicted counts") %>%
-        mutate(
-          model = "no_spatial"
         ),
       ww_draw_exp %>%
         filter(name == "predicted counts") %>%
@@ -285,7 +252,6 @@ test_model_date_shuffle <- function(
         prediction = pred_value,
         sample = draw
       )
-    
     
     #Overall score
     score_models <- all_pred_draws_df %>%
@@ -313,9 +279,41 @@ test_model_date_shuffle <- function(
               file = paste0(folder, "run_", x, "_of_", length(random_dates), "_modelscore.csv"),
               row.names = FALSE)
     
+    #Time end
+    time_end <- Sys.time()
+
+    write.csv(x = data.frame(run = x,
+                             time = time_end - time_start),
+              file = paste0(folder, "run_", x, "_of_", length(random_dates), "_timetaken.csv"),
+              row.names = FALSE)
+    
     message(paste0("Done ", x, " of ", length(random_dates)))
     
-
+    
   }, simplify = FALSE))
   
+  #Calculate overall performance
+  all_runs <- do.call(rbind, sapply(list.files(folder, pattern = "modelscore", full.names = T), function(x){
+    import(x)
+  }, simplify = FALSE))
+  
+  #Model score 
+  mod_score_agg <-  all_runs %>%
+    group_by(model) %>%
+    summarise_all(median)
+  
+  #Difference
+  sig_diff <- all_runs %>%
+    tbl_summary(
+      by = model
+    ) %>%
+    add_p() %>%
+    bold_p()
+  
+  #Output
+  gt::gtsave(as_gt(sig_diff), file = paste0(folder, "overall_median_score.png"))
+  
+  openxlsx::write.xlsx(x = as_tibble(sig_diff),
+            file = paste0(folder, "overall_median_score.xlsx"))
+
 }
