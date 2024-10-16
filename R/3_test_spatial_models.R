@@ -46,13 +46,13 @@ test_model_date_shuffle(
   raw_hospital_counts = hospital_counts,             #Raw hospital data
   raw_ww_data = ww_data,                             #Raw wastewater data
   pop_data,                                          #Population by catchment
-  sites = "1;7;22",                                  #If listing individual sites, combine with ; (i.e. 2;3;4)
+  sites = "all",                                     #If listing individual sites, combine with ; (i.e. 2;3;4)
   WA_population = 7786000,                           #WA population
   forecast_horizon = 28,                             #Number of days you are going to predict to
   spatial = facility_distance,                       #Spatial data values
   calibration_time = 90,                             #How long we want to calibrate for
   repeats = 10,                                      #How many shuffles of data we want to repeat this on
-  savename = "rapid_test",                           #Savename modifier for file output
+  savename = "full_run",                             #Savename modifier for file output
   fit_options = fit_this
 )
 
