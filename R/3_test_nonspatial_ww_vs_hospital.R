@@ -14,6 +14,11 @@ pacman::p_load(
   tidyverse
 )
 
+#If you have installed the SPATIAL version of the package, then re-install the main branch
+if(packageDescription("wwinference")$GithubRef == "spatial-main"){
+  devtools::install_github("CDCgov/ww-inference-model")
+}
+
 #Load in functions
 invisible(sapply(list.files(here("R", "functions"), full.names = T), function(x) source(x)))
 

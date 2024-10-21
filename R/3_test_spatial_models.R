@@ -14,6 +14,11 @@ pacman::p_load(
   tidyverse
 )
 
+#If you have installed the NON-SPATIAL version of the package, then re-install the spatial branch
+if(packageDescription("wwinference")$GithubRef != "spatial-main"){
+  devtools::install_github("CDCgov/ww-inference-model@spatial-main")
+}
+
 #Load in functions
 invisible(sapply(list.files(here("R", "functions"), full.names = T), function(x) source(x)))
 
@@ -52,7 +57,7 @@ test_model_date_shuffle(
   spatial = facility_distance,                       #Spatial data values
   calibration_time = 90,                             #How long we want to calibrate for
   repeats = 10,                                      #How many shuffles of data we want to repeat this on
-  savename = "run_all_sites",                        #Savename modifier for file output
+  savename = "spatial_full_run",                     #Savename modifier for file output
   fit_options = fit_this
 )
 
