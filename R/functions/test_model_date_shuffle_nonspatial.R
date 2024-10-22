@@ -274,13 +274,14 @@ test_model_date_shuffle_nonspatial <- function(
   #Difference
   sig_diff <- all_runs %>%
     tbl_summary(
-      by = model
+      by = model,
+      type = list(mad:se_mean ~ "continuous")
     ) %>%
     add_p() %>%
     bold_p()
   
   #What is the order of runs in time
-  order_of_runs_date <- data.frame(run = pred_sum$run, date = pred_sum$date) %>%
+  order_of_runs_date <- data.frame(run = all_rawpred$run, date = all_rawpred$date) %>%
     group_by(run) %>%
     summarise(date = min(date)) %>%
     arrange(date) %>%
@@ -305,7 +306,7 @@ test_model_date_shuffle_nonspatial <- function(
       run = factor(run, levels = order_of_runs_date$run)
     )
   
-  ggplot(
+  all_fit_go <- ggplot(
     data = pred_sum,
   ) +
     geom_line(
@@ -336,7 +337,9 @@ test_model_date_shuffle_nonspatial <- function(
     theme_minimal() +
     labs(x = "",
          y = "Hospitalizations",
-         fill = "") +
+         fill = "",
+         color = "",
+         title = "Model fits for different time-periods") +
     facet_wrap(
       ~run,
       scales = "free"
@@ -348,15 +351,17 @@ test_model_date_shuffle_nonspatial <- function(
   
   
   #Output
-  gt::gtsave(as_gt(sig_diff), file = paste0(dirname(folder), "overall_median_score.png"))
+  ggsave(paste0(dirname(folder), "/all_forecasts_one_plot.jpg"), all_fit_go)
+  
+  gt::gtsave(as_gt(sig_diff), file = paste0(dirname(folder), "/overall_median_score.png"))
   
   openxlsx::write.xlsx(x = as_tibble(sig_diff),
-                       file = paste0(dirname(folder), "overall_median_score.xlsx"))
+                       file = paste0(dirname(folder), "/overall_median_score.xlsx"))
   
   openxlsx::write.xlsx(x = as_tibble(model_score_raw),
-                       file = paste0(dirname(folder), "overall_median_score_fromraw.xlsx"))
+                       file = paste0(dirname(folder), "/overall_median_score_fromraw.xlsx"))
   
   openxlsx::write.xlsx(x = as_tibble(all_diag),
-                       file = paste0(dirname(folder), "overall_model_diagnostics.xlsx"))
+                       file = paste0(dirname(folder), "/overall_model_diagnostics.xlsx"))
 
 }
