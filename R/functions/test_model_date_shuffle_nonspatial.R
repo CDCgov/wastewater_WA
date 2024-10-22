@@ -29,8 +29,8 @@ test_model_date_shuffle_nonspatial <- function(
   )
   
   #Save folder for outputs
-  folder <- paste0("figs/date_shuffle/", savename, "/")
-  if(!dir.exists(folder)) dir.create(folder)
+  folder <- paste0("figs/date_shuffle/", savename, "/individual_runs/")
+  if(!dir.exists(folder)) dir.create(folder, recursive = T)
   
   #Write key
   write.csv(x = key,
@@ -101,6 +101,25 @@ test_model_date_shuffle_nonspatial <- function(
       fit_opts = fit_this,
       compiled_model = model
     )
+    
+    #Get model diagnostics
+    ww_diag <- get_model_diagnostic_flags(ww_fit)
+    hosp_diag <- get_model_diagnostic_flags(hosp_fit_only)
+    
+    combo_diag <- ww_diag %>%
+      mutate(
+        run = x,
+        model_type = "Wastewater"
+      ) %>%
+      rbind(hosp_diag %>%
+              mutate(
+                run = x,
+                model_type = "No wastewater"
+              ))
+    
+    write.csv(x = combo_diag,
+              file = paste0(folder, "run_", x, "_of_", length(random_dates), "_diagnostics.csv"),
+              row.names = FALSE)
     
     #Extract draws for analysis and plotting
     ww_draw <- get_draws(ww_fit)$predicted_counts
@@ -179,12 +198,6 @@ test_model_date_shuffle_nonspatial <- function(
         sample = draw
       )
     
-    #Overall score
-    score_models <- evaluate_data %>%
-      filter(!is.na(true_value)) %>%
-      score() %>%
-      summarise_scores(by = "model")
-    
     #Nowcasting scores
     eval_data <- processed_data$hosp_data_eval %>%
       filter(date > processed_data$hosp_data_fit %>% 
@@ -196,13 +209,23 @@ test_model_date_shuffle_nonspatial <- function(
     }
     
     #Score it up
-    model_score <- evaluate_data %>%
+    evaluate_data_upd <- evaluate_data %>%
+      mutate(forecast_or_fit = case_when(
+        date > max(processed_data$hosp_data_fit$date) ~ "Forecast",
+        date <= max(processed_data$hosp_data_fit$date) ~ "Fit",
+      ))
+      
+    model_score <- evaluate_data_upd %>%
       filter(date > max(processed_data$hosp_data_fit$date)) %>%
       score() %>%
       summarise_scores(by = "model")
     
     write.csv(x = model_score,
               file = paste0(folder, "run_", x, "_of_", length(random_dates), "_modelscore.csv"),
+              row.names = FALSE)
+    
+    write.csv(x = evaluate_data_upd,
+              file = paste0(folder, "run_", x, "_of_", length(random_dates), "_rawpredictions.csv"),
               row.names = FALSE)
     
     #Time end
@@ -218,15 +241,35 @@ test_model_date_shuffle_nonspatial <- function(
     
   }, simplify = FALSE))
   
+  #Load model diagnostics
+  all_diag <- do.call(rbind, sapply(list.files(folder, pattern = "diag", full.names = T), function(y){
+    import(y)
+  }, simplify = FALSE))
+  
+  row.names(all_diag) <- NULL
+  
+  #Calculate overall performance
+  all_rawpred <- do.call(rbind, sapply(list.files(folder, pattern = "rawpredictions", full.names = T), function(y){
+    import(y) %>%
+      mutate(run = unlist(strsplit(y, "_"))[5])
+  }, simplify = FALSE))
+  
+  row.names(all_rawpred) <- NULL
+  
+  #Model score 
+  model_score_raw <- all_rawpred %>%
+    score() %>%
+    summarise_scores(by = c("model", "forecast_or_fit")) %>%
+    rbind(all_rawpred %>%
+            score() %>%
+            summarise_scores(by = "model") %>%
+            mutate(forecast_or_fit = "All")) %>%
+    arrange(forecast_or_fit, model)
+  
   #Calculate overall performance
   all_runs <- do.call(rbind, sapply(list.files(folder, pattern = "modelscore", full.names = T), function(x){
     import(x)
   }, simplify = FALSE))
-  
-  #Model score 
-  mod_score_agg <-  all_runs %>%
-    group_by(model) %>%
-    summarise_all(median)
   
   #Difference
   sig_diff <- all_runs %>%
@@ -236,10 +279,84 @@ test_model_date_shuffle_nonspatial <- function(
     add_p() %>%
     bold_p()
   
+  #What is the order of runs in time
+  order_of_runs_date <- data.frame(run = pred_sum$run, date = pred_sum$date) %>%
+    group_by(run) %>%
+    summarise(date = min(date)) %>%
+    arrange(date) %>%
+    ungroup()
+
+  
+  #Plot all forecasts
+  pred_sum <- all_rawpred %>%
+    group_by(
+      date,
+      model,
+      forecast_or_fit,
+      run
+    ) %>%
+    summarise(
+      true_value = median(true_value),
+      prediction_median = median(prediction),
+      lower = quantile(prediction, 0.025),
+      upper = quantile(prediction, 0.975)
+    ) %>%
+    mutate(
+      run = factor(run, levels = order_of_runs_date$run)
+    )
+  
+  ggplot(
+    data = pred_sum,
+  ) +
+    geom_line(
+      mapping = aes(
+        x = date,
+        y = prediction_median,
+        color = model
+      )
+    ) +
+    geom_ribbon(
+      mapping = aes(
+        x = date,
+        ymin = lower,
+        ymax = upper,
+        fill = model
+      ),
+      alpha = 0.2
+    ) +
+    geom_point(
+      mapping = aes(
+        x = date,
+        y = true_value
+      ),
+      fill = "white",
+      color = "black",
+      shape = 21
+    ) +
+    theme_minimal() +
+    labs(x = "",
+         y = "Hospitalizations",
+         fill = "") +
+    facet_wrap(
+      ~run,
+      scales = "free"
+    ) +
+    theme(
+      strip.background = element_blank(),
+      strip.text.x = element_blank()
+    )
+  
+  
   #Output
-  gt::gtsave(as_gt(sig_diff), file = paste0(folder, "overall_median_score.png"))
+  gt::gtsave(as_gt(sig_diff), file = paste0(dirname(folder), "overall_median_score.png"))
   
   openxlsx::write.xlsx(x = as_tibble(sig_diff),
-            file = paste0(folder, "overall_median_score.xlsx"))
+                       file = paste0(dirname(folder), "overall_median_score.xlsx"))
+  
+  openxlsx::write.xlsx(x = as_tibble(model_score_raw),
+                       file = paste0(dirname(folder), "overall_median_score_fromraw.xlsx"))
+  
+  openxlsx::write.xlsx(x = as_tibble(all_diag),
+                       file = paste0(dirname(folder), "overall_model_diagnostics.xlsx"))
 
 }

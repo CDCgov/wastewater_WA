@@ -56,7 +56,7 @@ test_model_date_shuffle_nonspatial(
   forecast_horizon = 28,                             #Number of days you are going to predict to
   calibration_time = 90,                             #How long we want to calibrate for
   repeats = 10,                                      #How many shuffles of data we want to repeat this on
-  savename = "nonspatial_full_run",                  #Savename modifier for file output
+  savename = "nonspatial_v2",                        #Savename modifier for file output
   fit_options = fit_this
 )
 
