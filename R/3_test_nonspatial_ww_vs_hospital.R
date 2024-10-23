@@ -1,7 +1,7 @@
 #Install pacman if missing
 if(!require(pacman)) install.packages("pacman")
 
-#If you have installed the SPATIAL version of the package, then re-install the main branch
+#If you have installed a NON-MAIN branch version of the package, then re-install the main branch
 if(packageDescription("wwinference")$GithubRef != "HEAD"){
   devtools::install_github("CDCgov/ww-inference-model")
 }

@@ -336,7 +336,7 @@ test_model_date_shuffle <- function(
   #Calculate overall performance
   all_rawpred <- do.call(rbind, sapply(list.files(folder, pattern = "rawpredictions", full.names = T), function(y){
     import(y) %>%
-      mutate(run = unlist(strsplit(y, "_"))[5])
+      mutate(run = unlist(strsplit(y, "_"))[6])
   }, simplify = FALSE))
   
   row.names(all_rawpred) <- NULL
@@ -374,7 +374,6 @@ test_model_date_shuffle <- function(
     arrange(date) %>%
     ungroup()
   
-  
   #Plot all forecasts
   pred_sum <- all_rawpred %>%
     group_by(
@@ -396,6 +395,17 @@ test_model_date_shuffle <- function(
   all_fit_go <- ggplot(
     data = pred_sum,
   ) +
+    # tidyquant::geom_ma(
+    #   mapping = aes(
+    #     x = date,
+    #     y = true_value
+    #   ),
+    #   n = 7,
+    #   size = .5,
+    #   color = "black",
+    #   # linewidth = 1,
+    #   alpha = 1,
+    #   linetype = "solid") +
     geom_line(
       mapping = aes(
         x = date,
@@ -419,7 +429,8 @@ test_model_date_shuffle <- function(
       ),
       fill = "white",
       color = "black",
-      shape = 21
+      shape = 21,
+      alpha = 0.25
     ) +
     theme_minimal() +
     labs(x = "",
@@ -438,7 +449,7 @@ test_model_date_shuffle <- function(
   
   
   #Output
-  ggsave(paste0(dirname(folder), "/all_forecasts_one_plot.jpg"), all_fit_go)
+  ggsave(paste0(dirname(folder), "/all_forecasts_one_plot.jpg"), all_fit_go, width = 14, height = 7)
   
   gt::gtsave(as_gt(sig_diff), file = paste0(dirname(folder), "/overall_median_score.png"))
   
