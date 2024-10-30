@@ -12,6 +12,7 @@ pacman::p_load(
   here,
   arrow,
   wwinference,
+  ggnewscale,
   scoringutils,
   ggh4x,
   openxlsx,
@@ -43,7 +44,7 @@ fit_this <- get_mcmc_options(
 )
 
 #Now we want to loop through sections of the data to evaluate the fit
-#We are going to split the dataset into 120 day chunks (90 days calibration, 30 days prediction), and then run the model on each chunk and evaluate the fit
+#We are going to split the dataset into 118 day chunks (90 days calibration, 28 days prediction), and then run the model on each chunk and evaluate the fit
 set.seed(1)
 
 #Run through the shuffle of dates

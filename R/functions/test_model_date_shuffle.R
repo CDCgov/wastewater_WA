@@ -392,27 +392,14 @@ test_model_date_shuffle <- function(
       run = factor(run, levels = order_of_runs_date$run)
     )
   
+  pred_sum <- pred_sum %>%
+    group_by(run) %>%
+    mutate(data_split = min(date[forecast_or_fit == "Forecast"]))
+  
+  #Plot
   all_fit_go <- ggplot(
     data = pred_sum,
   ) +
-    # tidyquant::geom_ma(
-    #   mapping = aes(
-    #     x = date,
-    #     y = true_value
-    #   ),
-    #   n = 7,
-    #   size = .5,
-    #   color = "black",
-    #   # linewidth = 1,
-    #   alpha = 1,
-    #   linetype = "solid") +
-    geom_line(
-      mapping = aes(
-        x = date,
-        y = prediction_median,
-        color = model
-      )
-    ) +
     geom_ribbon(
       mapping = aes(
         x = date,
@@ -422,21 +409,32 @@ test_model_date_shuffle <- function(
       ),
       alpha = 0.2
     ) +
+    new_scale_fill() +
     geom_point(
       mapping = aes(
         x = date,
-        y = true_value
+        y = true_value,
+        fill = forecast_or_fit
       ),
-      fill = "white",
-      color = "black",
       shape = 21,
-      alpha = 0.25
+      alpha = 0.25,
+      size = .75,
+    ) +
+    scale_fill_manual(values=c("gray70", "white")) +
+    geom_line(
+      mapping = aes(
+        x = date,
+        y = prediction_median,
+        color = model
+      ),
+      show.legend = F
     ) +
     theme_minimal() +
     labs(x = "",
          y = "Hospitalizations",
          fill = "",
          color = "",
+         fill = "",
          title = "Model fits for different time-periods") +
     facet_wrap(
       ~run,
@@ -444,7 +442,12 @@ test_model_date_shuffle <- function(
     ) +
     theme(
       strip.background = element_blank(),
-      strip.text.x = element_blank()
+      strip.text.x = element_blank(),
+      legend.position = "bottom"
+    ) +
+    geom_vline( 
+      mapping = aes(xintercept = data_split),
+      linetype = "dashed"
     )
   
   

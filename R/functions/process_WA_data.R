@@ -122,7 +122,7 @@ process_WA_data <- function(raw_hospital_counts,
   ) %>%
     mutate(date = as.Date(date))
   
-  ww_data_to_fit <- indicate_ww_exclusions(
+  ww_data_to_fit_almost <- indicate_ww_exclusions(
     ww_data_preprocessed,
     outlier_col_name = "flag_as_ww_outlier",
     remove_outliers = TRUE
@@ -130,20 +130,20 @@ process_WA_data <- function(raw_hospital_counts,
     mutate(date = as.Date(date))
   
   #Line up dates
-  min_date <- pmax(min(ww_data_to_fit$date),
+  min_date <- pmax(min(ww_data_to_fit_almost$date),
                    min(hosp_data_preprocessed$date))
   
-  max_date <- pmin(max(ww_data_to_fit$date),
+  max_date <- pmin(max(ww_data_to_fit_almost$date),
                    max(hosp_data_preprocessed$date))
   
-  ww_data_to_fit <- ww_data_to_fit %>%
-    filter(date >= min_date & date <= max_date)
+  ww_data_to_fit <- ww_data_to_fit_almost %>%
+    filter(date <= max_date)
   
   hosp_data_preprocessed <- hosp_data_preprocessed %>%
-    filter(date >= min_date & date <= max_date)
+    filter(date <= max_date)
   
-  hosp_data_eval <- hosp_data_eval %>%
-    filter(date >= min_date)
+  # hosp_data_eval <- hosp_data_eval %>%
+  #   filter(date >= min_date)
   
   #Set up model calibration and forecast time
   generation_interval <- wwinference::default_covid_gi

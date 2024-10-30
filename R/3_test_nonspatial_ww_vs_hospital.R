@@ -14,6 +14,7 @@ pacman::p_load(
   wwinference,
   scoringutils,
   ggh4x,
+  ggnewscale,
   openxlsx,
   gtsummary,
   tidyverse
@@ -43,7 +44,7 @@ fit_this <- get_mcmc_options(
 )
 
 #Now we want to loop through sections of the data to evaluate the fit
-#We are going to split the dataset into 120 day chunks (90 days calibration, 30 days prediction), and then run the model on each chunk and evaluate the fit
+#We are going to split the dataset into 118 day chunks (90 days calibration, 28 days prediction), and then run the model on each chunk and evaluate the fit
 set.seed(1)
 
 #Run through the shuffle of dates
@@ -51,7 +52,7 @@ test_model_date_shuffle_nonspatial(
   raw_hospital_counts = hospital_counts,             #Raw hospital data
   raw_ww_data = ww_data,                             #Raw wastewater data
   pop_data,                                          #Population by catchment
-  sites = "all",                                     #If listing individual sites, combine with ; (i.e. 2;3;4)
+  sites = "womp",                                     #If listing individual sites, combine with ; (i.e. 2;3;4)
   WA_population = 7786000,                           #WA population
   forecast_horizon = 28,                             #Number of days you are going to predict to
   calibration_time = 90,                             #How long we want to calibrate for

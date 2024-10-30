@@ -8,6 +8,7 @@ test_model_date_shuffle_nonspatial <- function(
     forecast_horizon = 28,                   #Number of days you are going to predict to
     calibration_time = 90,
     repeats = 5,
+    repeat_subset = NA,
     savename = "test",
     fit_options){
   
@@ -38,7 +39,15 @@ test_model_date_shuffle_nonspatial <- function(
             row.names = FALSE)
 
   #Loop through dates
-  all_done <- do.call(rbind, sapply(1:length(random_dates), function(x){
+  these_runs <- 1:length(random_dates)
+  
+  if(!is.na(repeat_subset)){
+    these_runs <- as.numeric(unlist(strsplit(repeat_subset, ";")))
+  }
+  
+  all_done <- do.call(rbind, sapply(these_runs, function(x){
+    
+    try({
     
     #Time start
     time_start <- Sys.time()
@@ -85,7 +94,7 @@ test_model_date_shuffle_nonspatial <- function(
     message("Fitting model WITH wastewater data")
     
     #Exponential fit
-    ww_fit <- wwinference(
+    ww_fit <- suppressWarnings(wwinference(
       ww_data = processed_data$ww_data_fit,
       count_data = processed_data$hosp_data_fit,
       forecast_date = processed_data$forecast_date,
@@ -100,7 +109,7 @@ test_model_date_shuffle_nonspatial <- function(
       ),
       fit_opts = fit_this,
       compiled_model = model
-    )
+    ))
     
     #Get model diagnostics
     ww_diag <- get_model_diagnostic_flags(ww_fit)
@@ -210,10 +219,13 @@ test_model_date_shuffle_nonspatial <- function(
     
     #Score it up
     evaluate_data_upd <- evaluate_data %>%
-      mutate(forecast_or_fit = case_when(
-        date > max(processed_data$hosp_data_fit$date) ~ "Forecast",
-        date <= max(processed_data$hosp_data_fit$date) ~ "Fit",
-      ))
+      mutate(
+        forecast_or_fit = case_when(
+          date > max(processed_data$hosp_data_fit$date) ~ "Forecast",
+          date <= max(processed_data$hosp_data_fit$date) ~ "Fit",
+        ),
+        run = x
+      )
       
     model_score <- evaluate_data_upd %>%
       filter(date > max(processed_data$hosp_data_fit$date)) %>%
@@ -238,20 +250,25 @@ test_model_date_shuffle_nonspatial <- function(
     
     message(paste0("Done ", x, " of ", length(random_dates)))
     
+    })
     
   }, simplify = FALSE))
   
   #Load model diagnostics
-  all_diag <- do.call(rbind, sapply(list.files(folder, pattern = "diag", full.names = T), function(y){
+  diagnostics <- list.files(folder, pattern = "diag", full.names = T)
+  all_diag <- do.call(rbind, sapply(diagnostics[grepl(paste0("_of_", repeats), diagnostics)], function(y){
     import(y)
   }, simplify = FALSE))
   
   row.names(all_diag) <- NULL
   
   #Calculate overall performance
-  all_rawpred <- do.call(rbind, sapply(list.files(folder, pattern = "rawpredictions", full.names = T), function(y){
+  predictions <- list.files(folder, pattern = "rawpredictions", full.names = T)
+  
+  all_rawpred <- do.call(rbind, sapply(predictions[grepl(paste0("_of_", repeats), predictions)], function(y){
+    unlisted <- unlist(strsplit(y, "_"))
     import(y) %>%
-      mutate(run = unlist(strsplit(y, "_"))[5])
+      mutate(run = unlisted[which(unlisted == "of")-1])
   }, simplify = FALSE))
   
   row.names(all_rawpred) <- NULL
@@ -267,7 +284,8 @@ test_model_date_shuffle_nonspatial <- function(
     arrange(forecast_or_fit, model)
   
   #Calculate overall performance
-  all_runs <- do.call(rbind, sapply(list.files(folder, pattern = "modelscore", full.names = T), function(x){
+  modelscores <- list.files(folder, pattern = "modelscore", full.names = T)
+  all_runs <- do.call(rbind, sapply(modelscores[grepl(paste0("_of_", repeats), modelscores)], function(x){
     import(x)
   }, simplify = FALSE))
   
@@ -306,16 +324,15 @@ test_model_date_shuffle_nonspatial <- function(
       run = factor(run, levels = order_of_runs_date$run)
     )
   
+  pred_sum <- pred_sum %>%
+    group_by(run) %>%
+    mutate(data_split = min(date[forecast_or_fit == "Forecast"]))
+  
+
+  #Plot
   all_fit_go <- ggplot(
     data = pred_sum,
   ) +
-    geom_line(
-      mapping = aes(
-        x = date,
-        y = prediction_median,
-        color = model
-      )
-    ) +
     geom_ribbon(
       mapping = aes(
         x = date,
@@ -325,20 +342,32 @@ test_model_date_shuffle_nonspatial <- function(
       ),
       alpha = 0.2
     ) +
+    new_scale_fill() +
     geom_point(
       mapping = aes(
         x = date,
-        y = true_value
+        y = true_value,
+        fill = forecast_or_fit
       ),
-      fill = "white",
-      color = "black",
-      shape = 21
+      shape = 21,
+      alpha = 0.25,
+      size = .75,
+    ) +
+    scale_fill_manual(values=c("gray70", "white")) +
+    geom_line(
+      mapping = aes(
+        x = date,
+        y = prediction_median,
+        color = model
+      ),
+      show.legend = F
     ) +
     theme_minimal() +
     labs(x = "",
          y = "Hospitalizations",
          fill = "",
          color = "",
+         fill = "",
          title = "Model fits for different time-periods") +
     facet_wrap(
       ~run,
@@ -346,12 +375,17 @@ test_model_date_shuffle_nonspatial <- function(
     ) +
     theme(
       strip.background = element_blank(),
-      strip.text.x = element_blank()
+      strip.text.x = element_blank(),
+      legend.position = "bottom"
+    ) +
+    geom_vline( 
+      mapping = aes(xintercept = data_split),
+      linetype = "dashed"
     )
   
   
   #Output
-  ggsave(paste0(dirname(folder), "/all_forecasts_one_plot.jpg"), all_fit_go)
+  ggsave(paste0(dirname(folder), "/all_forecasts_one_plot.jpg"), all_fit_go, width = 10, height = 6)
   
   gt::gtsave(as_gt(sig_diff), file = paste0(dirname(folder), "/overall_median_score.png"))
   
