@@ -1,15 +1,14 @@
 
-get_cor_mat <- function(model_fits,
-                        model_names = NA){
+get_cor_mat <- function(model_list){
   
   #Set up names
-  model_names <- if(all(is.na(model_names))) LETTERS[1:length(model_fits)] else model_names
+  model_names <- if(is.null(names(model_list))) LETTERS[1:length(model_list)] else names(model_list)
   
   #Loop through different fits
-  matrix_all <- do.call(rbind, sapply(1:length(model_fits), function(x){
+  matrix_all <- do.call(rbind, sapply(1:length(model_list), function(x){
     
     #Extract and rearrange
-    model_fits[[x]]$fit$result$draws(
+    model_list[[x]]$fit$result$draws(
       variables = "non_norm_omega",
       format = "draws_array"
     ) %>%

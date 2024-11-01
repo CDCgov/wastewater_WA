@@ -50,6 +50,9 @@ fit_this <- get_mcmc_options(
 #We are going to split the dataset into 118 day chunks (90 days calibration, 28 days prediction), and then run the model on each chunk and evaluate the fit
 set.seed(1)
 
+#Set the number of cores
+options(mc.cores = min(8, parallel::detectCores()))
+
 #Run through the shuffle of dates
 WA_spatial_run(
   #Raw hospital data

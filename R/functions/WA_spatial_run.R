@@ -314,6 +314,34 @@ WA_spatial_run <- function(
           scales = "free"
         )
       
+      #Create correlation matrix
+      correlation_matrix <- get_cor_mat(
+        model_list = list(
+          "No correlation" = nocor_fit, 
+          "Exponential" = exp_fit,
+          "LKJ" = lkj_fit
+        )
+      )
+      
+      #Create correlation matrix plot
+      cor_plot <- ggplot(
+        data = correlation_matrix %>%
+          filter(model_type != "No correlation"),
+        mapping = aes(
+          x = gsub("Site ", "", Column),
+          y = gsub("Site ", "", Row),
+          fill = median
+        )
+      ) +
+        geom_tile() +
+        theme_bw() +
+        labs(x = "",
+             y = "",
+             fill = "Correlation") +
+        facet_wrap(~model_type) +
+        scale_fill_viridis_c()
+      
+      
       # Output individual runs --------------------------------------------------
       
       #Output model diagnostics
@@ -322,6 +350,14 @@ WA_spatial_run <- function(
                     run = x
                   ),
                 file = paste0(folder_full, "run_", x, "_of_", length(random_dates), "_diagnostics.csv"),
+                row.names = FALSE)
+      
+      #Output correlations
+      write.csv(x = correlation_matrix %>%
+                  mutate(
+                    run = x
+                  ),
+                file = paste0(folder_full, "run_", x, "_of_", length(random_dates), "_site_correlation.csv"),
                 row.names = FALSE)
       
       #Output full raw predictions for hospitalizations - using fwrite and gzip compression to reduce filesize by 100x
@@ -356,6 +392,12 @@ WA_spatial_run <- function(
                   ),
                 file = paste0(folder_full, "run_", x, "_of_", length(random_dates), "_ww_modelscore.csv"),
                 row.names = FALSE)
+      
+      #Output correlation figure
+      ggsave(paste0(folder_full, "run_", x, "_of_", length(random_dates), "_correlations.jpg"), 
+             cor_plot, 
+             height = 4, 
+             width = 7)
       
       #Output forecast figures
       ggsave(paste0(folder_full, "run_", x, "_of_", length(random_dates), "_hospforecast.jpg"), 
