@@ -1,10 +1,12 @@
 #Install pacman if missing
 if(!require(pacman)) install.packages("pacman")
 
-#If you have installed a NON-MAIN branch version of the package, then re-install the main branch
-if(packageDescription("wwinference")$GithubRef != "HEAD"){
-  devtools::install_github("CDCgov/ww-inference-model")
+#If you have installed the NON-SPATIAL version of the package, then re-install the spatial branch
+prior <- packageDescription("wwinference")$GithubRef
+if(packageDescription("wwinference")$GithubRef != "spatial-main"){
+  devtools::install_github("CDCgov/ww-inference-model@spatial-main")
 }
+current <- packageDescription("wwinference")$GithubRef
 
 #Load packages
 pacman::p_load(
@@ -12,9 +14,10 @@ pacman::p_load(
   here,
   arrow,
   wwinference,
-  scoringutils,
-  ggh4x,
   ggnewscale,
+  scoringutils,
+  data.table,
+  ggh4x,
   openxlsx,
   gtsummary,
   tidyverse
@@ -34,7 +37,7 @@ pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
 facility_distance <- import(here("data", "WA", "simulated_facility_distances.csv"))
 
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
-model <- compile_model_upd()
+compiled_model <- compile_model_upd(update_files = prior != current)
 
 #Specify fit options
 fit_this <- get_mcmc_options(
@@ -48,17 +51,31 @@ fit_this <- get_mcmc_options(
 set.seed(1)
 
 #Run through the shuffle of dates
-test_model_date_shuffle_nonspatial(
-  raw_hospital_counts = hospital_counts,             #Raw hospital data
-  raw_ww_data = ww_data,                             #Raw wastewater data
-  pop_data,                                          #Population by catchment
-  sites = "womp",                                     #If listing individual sites, combine with ; (i.e. 2;3;4)
-  WA_population = 7786000,                           #WA population
-  forecast_horizon = 28,                             #Number of days you are going to predict to
-  calibration_time = 90,                             #How long we want to calibrate for
-  repeats = 10,                                      #How many shuffles of data we want to repeat this on
-  savename = "nonspatial_v2",                        #Savename modifier for file output
-  fit_options = fit_this
+WA_spatial_run(
+  #Raw hospital data
+  raw_hospital_counts = hospital_counts,         
+  #Raw wastewater data
+  raw_ww_data = ww_data,  
+  #Population by catchment
+  pop_data,
+  #If listing individual sites, combine with ; (i.e. 2;3;4)
+  sites = "all",                         
+  #WA population
+  WA_population = 7786000,    
+  #Number of days you are going to predict to
+  forecast_horizon = 28,    
+  #How long we want to calibrate for
+  calibration_time = 90,               
+  #How many shuffles of data we want to repeat this on
+  repeats = 10,  
+  #Save name modifier for file output
+  savename = "spatial_state",    
+  #Model fit options - specified above
+  fit_options = fit_this,
+  #The compiled model
+  compiled_model = compiled_model,
+  #Spatial data
+  spatial = facility_distance
 )
 
 

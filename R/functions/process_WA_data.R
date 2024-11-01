@@ -1,12 +1,22 @@
 
 
-process_WA_data <- function(raw_hospital_counts,
-                            raw_ww_data,
-                            pop_data,
-                            sites = "all",                      #If listing individual sites, combine with ; (i.e. 2;3;4)
-                            WA_population = 7786000,
-                            forecast_horizon,                   #Number of days you are going to predict to
-                            spatial = NA
+process_WA_data <- function(
+  #Raw hospital data as provided by WA
+  raw_hospital_counts,
+  #Raw wastewater data as provided by WA
+  raw_ww_data,
+  #Raw population data as provided by WA
+  pop_data,
+  #Sites that you want to run the model on, you can use "all" for all sites in the dataset, individual sites, or a vector of sites separate with ; (i.e. 2;13;22)
+  sites = "all",
+  #The population of Washington state
+  WA_population = 7786000,
+  #The number of days you want to forecast
+  forecast_horizon = 28,                   
+  #The number of days you are calibrating the model on
+  calibration_time = 90,  
+  #Whether or not to run the spatial component
+  spatial = NA
 ){
   
   #Subset to specific sites
@@ -18,9 +28,24 @@ process_WA_data <- function(raw_hospital_counts,
     as.numeric(sites)
   }
   
+  #Subset to the sites in question
   ww_data_subset <- raw_ww_data %>% 
     subset(treatment_plant %in% sites_unpacked)
   
+  hosp_data_subset <- raw_hospital_counts %>% 
+    subset(treatment_plant %in% sites_unpacked) %>%
+    select(-V1)
+  
+  hosp_data_subset <- hosp_data_subset %>%
+    group_by(admit_date) %>%
+    summarise(
+      simulated_count = sum(simulated_count)
+    ) %>%
+    mutate(
+      treatment_plant = 0
+    ) %>%
+    rbind(hosp_data_subset)
+
   #Set up spatial data
   #Set up distance matrix
   if(!all(is.na(spatial))){
@@ -46,12 +71,6 @@ process_WA_data <- function(raw_hospital_counts,
       }
     }
   }
-  
-  #Set up parameters
-  unique_treatment_plant <- sort(unique(ww_data$treatment_plant))
-  n_sites <- length(unique_treatment_plant)
-  site <- 1:n_sites
-  lab <- rep(1, n_sites)
   
   #Clean data and set up in the format that wwinference wants
   #Set up data in the format it is expected
@@ -79,7 +98,7 @@ process_WA_data <- function(raw_hospital_counts,
   
   #Hospitalization data
   #Lab == 0 is the state level data
-  hosp_data_clean <- raw_hospital_counts %>%
+  hosp_data_clean <- hosp_data_subset %>%
     select(date = admit_date,
            lab = treatment_plant,
            daily_hosp_admits = simulated_count) %>%
@@ -93,6 +112,7 @@ process_WA_data <- function(raw_hospital_counts,
   #What data to eval
   #Remove forecast_horizon days from the main dataset to create a dataset to train to
   hosp_data_eval <- hosp_data_clean
+  ww_data_eval <- ww_data_clean
   
   hosp_data_clean_subset <- hosp_data_clean %>%
     subset(date <= max(date) - forecast_horizon)
@@ -142,9 +162,6 @@ process_WA_data <- function(raw_hospital_counts,
   hosp_data_preprocessed <- hosp_data_preprocessed %>%
     filter(date <= max_date)
   
-  # hosp_data_eval <- hosp_data_eval %>%
-  #   filter(date >= min_date)
-  
   #Set up model calibration and forecast time
   generation_interval <- wwinference::default_covid_gi
   inf_to_hosp <- wwinference::default_covid_inf_to_hosp
@@ -161,6 +178,7 @@ process_WA_data <- function(raw_hospital_counts,
     ww_data_fit = ww_data_to_fit,
     hosp_data_fit = hosp_data_preprocessed,
     hosp_data_eval = hosp_data_eval,
+    ww_data_eval = ww_data_eval,
     time_start = time_start,
     forecast_date = forecast_date,
     forecast_horizon = forecast_horizon,

@@ -1,5 +1,5 @@
 
-compile_model_upd <- function(custom_location = F){
+compile_model_upd <- function(custom_location = F, update_files = F){
   
   if(Sys.info()[[1]] == "Windows"){
     
@@ -8,7 +8,7 @@ compile_model_upd <- function(custom_location = F){
                                  package = "wwinference")
     
     #Do they include a space in the file path?
-    if(grepl(" ", stan_location)){
+    if(grepl(" ", stan_location) | update_files == T){
       #Deconstruct path
       deconstructed_path <- unlist(strsplit(stan_location, "/"))
       #Reconstructed path
