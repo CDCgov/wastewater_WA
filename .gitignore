@@ -2,9 +2,13 @@
 .Rhistory
 .RData
 .Ruserdata
-data/WA/
 R/archive/
 figs/date_shuffle
 figs/archive
 slides
 output/model_runs/full_data
+
+data/WA/simulated_catchment_populations.csv
+data/WA/simulated_facility_distances.csv
+data/WA/simulated_hospital_counts.csv
+data/WA/simulated_ww_data.csv
