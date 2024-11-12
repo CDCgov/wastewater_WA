@@ -25,15 +25,15 @@ invisible(sapply(list.files(here("R", "functions"), full.names = T), function(x)
 
 #Import data - these data sets will be missing if you have pulled this from github
 #Hospital count data
-hospital_counts <- import(here("data", "WA", "simulated_hospital_counts.csv"))
+hospital_counts <- import(here("data", "simulated", "simulated_hospital_counts.csv"))
 #Wastewater sample data
-ww_data <- import(here("data", "WA", "simulated_ww_data.csv")) %>%
+ww_data <- import(here("data", "simulated", "simulated_ww_data.csv")) %>%
   mutate(log_concentration = log(simulated_raw_concentration)) %>%
   mutate(treatment_plant = as.character(treatment_plant))
 #Population data for each catchment
-pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
+pop_data <- import(here("data", "simulated", "simulated_catchment_populations.csv"))
 #Normalized distance between each wastewater facility
-facility_distance <- import(here("data", "WA", "simulated_facility_distances.csv"))
+facility_distance <- import(here("data", "simulated", "simulated_facility_distances.csv"))
 
 #Plot hospital counts over time
 levels <- sort(unique(hospital_counts$treatment_plant))

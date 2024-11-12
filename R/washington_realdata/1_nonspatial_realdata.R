@@ -28,11 +28,11 @@ invisible(sapply(list.files(here("R", "functions"), full.names = T), function(x)
 
 #Import data - these data sets will be missing if you have pulled this from github
 #Hospital count data
-hospital_counts <- import(here("data", "WA", "simulated_hospital_counts.csv"))
+hospital_counts <- import(here("data", "simulated", "simulated_hospital_counts.csv"))
 #Wastewater sample data
-ww_data <- import(here("data", "WA", "simulated_ww_data.csv"))
+ww_data <- import(here("data", "simulated", "simulated_ww_data.csv"))
 #Population data for each catchment
-pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
+pop_data <- import(here("data", "simulated", "simulated_catchment_populations.csv"))
 
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
 #Added the argument update_files so that if the prior version of the package is different to the current, it does a fresh
