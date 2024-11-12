@@ -11,4 +11,4 @@ data/simulated/simulated_catchment_populations.csv
 data/simulated/simulated_facility_distances.csv
 data/simulated/simulated_hospital_counts.csv
 data/simulated/simulated_ww_data.csv
-data/bug_testing
+R/bug_testing
