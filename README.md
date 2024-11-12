@@ -26,15 +26,15 @@ This folder is where all files that are imported into R should be stored. Within
 
 Here we store all of our R scripts, and custom functions that are required to clean, run and analyze our models. Self contained functions are stored in the *functions* folder and scripts for running through the data and functions are found within *scripts*.
 
-Within the *scripts* folder, there are three .R files, "1_assess_nonspatial_state", "2_assess_nonspatial_substate" and "3_assess_spatial_state".
+Within the *scripts* folder, there are three .R files, `1_assess_nonspatial_state.R`, `2_assess_nonspatial_substate.R`, and `3_assess_spatial_state.R`.
 
-* 1_assess_nonspatial_state.R
+* `1_assess_nonspatial_state.R`
   - This is the initial script that we run in order to assess the affect of including wastewater data on the accuracy of forecasts of wastewater concentration and hospital admissions.
   - The script makes sure the correct **ww-inference** package version has been installed, loads packages and data, compiles the [stan](https://mc-stan.org/) model which fits the data, and then runs our analysis with the custom function `WA_nonspatial_run()`.
   - There are numerous ways to customise and adapt `WA_nonspatial_run` which are specified in the function code comments. The current set up is that you will run the model on every site included in the data. Then we will randomly select 10 different windows of data, which are termed "repeats" to get several different epidemic trajectories. Each window is 118 days, fitting the model to 90, and predicting to 28. The approach will then run through the 10 different windows, and assess the overall model fit across the different windows. Numerous csv files and image files will be output, which are further explained in the output section. **Important:** Please specify a unique and specific "savename" as this is used to create folders and outputs from each model run. 
-* 2_assess_nonspatial_state.R
+* `2_assess_nonspatial_state.R`
   - This runs the same function as above (`WA_nonspatial_run()`) but loops through each site individually.
-* 3_assess_spatial_state.R
+* `3_assess_spatial_state.R`
   - Here we make sure the spatial-branch of the **ww-inference** package is installed. From here, we specify the model as in previous scripts, but use the function `WA_spatial_run()` to carry out our analysis. This function compares a model not using spatial information for the wastewater data, with two different spatial correlations ([exponential](https://en.wikipedia.org/wiki/Exponential_function) and a [Lewandowski-Kurowicka-Joe distribution (LKJ)](https://en.wikipedia.org/wiki/Lewandowski-Kurowicka-Joe_distribution)).
 
 ### output
@@ -43,7 +43,7 @@ Within the folder *output* there is two further folders, *full_data* and *summar
 
 *full_data*
 
-This folder contains all of the individual model runs that are created as you loop through each run. For every run you will create a series of files, these will include the name "hosp" if they related to hospitalization forecasts, or "ww" if they relate to wastewater forecasts:
+This folder contains all of the individual model runs that are created as you loop through each run. For every run you will create a series of files, these will include the name "hosp" if they related to hospitalization forecasts, or "ww" if they relate to wastewater forecasts. These folders are not included by default, as there is a lot of information here, and the summary information is likely more important to disseminate.
 
 * _diagnostics.csv
   - This file contains a number of diagnostic tests to ensure the model ran succesfully. If any of these diagnostics are `TRUE`, it may indicate the model poorly fit. Please see [here](https://github.com/CDCgov/ww-inference-model/blob/main/R/model_diagnostics.R) for more detail.
@@ -69,7 +69,7 @@ This folder contains the summary information for completed instances of `WA_nons
 * _forecasts.jpg
   - Visualizations of the wastewater and hospitalization forecasts. An individual plot for each run is present, and for wastewater an individual plot for each site as well.
 * scoring_.csv
-  - Scores from [**scoringutils**]((https://epiforecasts.io/scoringutils/index.html) on the aggregate data.
+  - Scores from [scoringutils](https://epiforecasts.io/scoringutils/index.html) on the aggregate data.
 * diagnostics.csv
   - Model diagnostics for each run.
 
