@@ -14,8 +14,8 @@ WA_nonspatial_run <- function(
   #The number of days you are calibrating the model on
   calibration_time = 90,
   #The number of randomly selected date windows to run the model on
-  repeats = 5,
-  #Specific repeats you want to run the model on. For example if you had partly run the model on repeats 1-4, but had stopped before running 5, you could set this as 5 and run just the 5th subset of the date windows. Primarily used for testing, or picking up larger jobs if your computer has crashed.
+  runs = 5,
+  #Specific runs you want to run the model on. For example if you had partly run the model on runs 1-4, but had stopped before running 5, you could set this as 5 and run just the 5th subset of the date windows. Primarily used for testing, or picking up larger jobs if your computer has crashed.
   repeat_subset = NA,
   #Savename - this dictates what your folders are called
   savename = "test",
@@ -33,14 +33,14 @@ WA_nonspatial_run <- function(
   #Remove all of those which are less than calibration_time + forecast_horizon from the end
   unique_subset <- unique_dates[-c((length(unique_dates)-(1 + calibration_time + forecast_horizon)):length(unique_dates))]
   #Randomly sample
-  random_dates <- sample(unique_subset, repeats)
+  random_dates <- sample(unique_subset, runs)
   
   #Create dataframe and save so we know whats happened
   key <- data.frame(
     sites,
     forecast_horizon,
     calibration_time,
-    repeats,
+    runs,
     savename,
     random_dates
   )
@@ -64,7 +64,7 @@ WA_nonspatial_run <- function(
     these_runs <- as.numeric(unlist(strsplit(repeat_subset, ";")))
   }
   
-  # Loop through repeats ----------------------------------------------------
+  # Loop through runs ----------------------------------------------------
   all_model_runs <- sapply(these_runs, function(x){
     
     #Set try to allow the model to keep running if an individual run fails
@@ -378,18 +378,18 @@ WA_nonspatial_run <- function(
   
   #Load model diagnostics
   diagnostics <- list.files(folder_full, pattern = "diag", full.names = T)
-  all_diag <- do.call(rbind, sapply(diagnostics[grepl(paste0("_of_", repeats), diagnostics)], function(y){
+  all_diag <- do.call(rbind, sapply(diagnostics[grepl(paste0("_of_", runs), diagnostics)], function(y){
     import(y)
   }, simplify = FALSE))
   
   #Load in overall performance
   predictions_hosp <- list.files(folder_full, pattern = "hosp_rawpredictions", full.names = T)
-  all_rawpred_hosp <- do.call(rbind, sapply(predictions_hosp[grepl(paste0("_of_", repeats), predictions_hosp)], function(y){
+  all_rawpred_hosp <- do.call(rbind, sapply(predictions_hosp[grepl(paste0("_of_", runs), predictions_hosp)], function(y){
     import(y)
   }, simplify = FALSE))
   
   predictions_ww <- list.files(folder_full, pattern = "ww_rawpredictions", full.names = T)
-  all_rawpred_ww <- do.call(rbind, sapply(predictions_ww[grepl(paste0("_of_", repeats), predictions_ww)], function(y){
+  all_rawpred_ww <- do.call(rbind, sapply(predictions_ww[grepl(paste0("_of_", runs), predictions_ww)], function(y){
     import(y)
   }, simplify = FALSE))
   

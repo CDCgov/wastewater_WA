@@ -70,7 +70,7 @@ WA_spatial_run(
   #How long we want to calibrate for
   calibration_time = 90,               
   #How many shuffles of data we want to repeat this on
-  repeats = 10,  
+  runs = 10,  
   #Save name modifier for file output
   savename = "spatial_state",    
   #Model fit options - specified above
