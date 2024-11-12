@@ -43,7 +43,7 @@ Within the folder *output* there is two further folders, *full_data* and *summar
 
 *full_data*
 
-This folder contains all of the individual model runs that are created as you loop through each run. For every run you will create a series of files, these will include the name "hosp" if they related to hospitalization forecasts, or "ww" if they relate to wastewater forecasts:
+This folder contains all of the individual model runs that are created as you loop through each run. For every run you will create a series of files, these will include the name "hosp" if they related to hospitalization forecasts, or "ww" if they relate to wastewater forecasts. These folders are not included by default, as there is a lot of information here, and the summary information is likely more important to disseminate.
 
 * _diagnostics.csv
   - This file contains a number of diagnostic tests to ensure the model ran succesfully. If any of these diagnostics are `TRUE`, it may indicate the model poorly fit. Please see [here](https://github.com/CDCgov/ww-inference-model/blob/main/R/model_diagnostics.R) for more detail.
