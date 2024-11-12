@@ -67,7 +67,7 @@ WA_nonspatial_run(
   #How long we want to calibrate for
   calibration_time = 90,               
   #How many shuffles of data we want to repeat this on
-  repeats = 10,  
+  runs = 10,  
   #Savename modifier for file output
   savename = "nonspatial_realdata",    
   #Model fit options - specified above
