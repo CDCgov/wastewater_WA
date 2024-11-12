@@ -1,4 +1,0 @@
-"flag_high_max_treedepth","flag_too_many_divergences","flag_high_rhat","flag_low_embfi","run","model_type"
-FALSE,FALSE,FALSE,FALSE,8,"no_cor"
-FALSE,FALSE,FALSE,FALSE,8,"exp"
-FALSE,TRUE,TRUE,FALSE,8,"lkj"
