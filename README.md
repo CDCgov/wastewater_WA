@@ -6,7 +6,17 @@
 
 This repository serves as a walkthrough for using simulated data from Washington state with the CDC's [ww-inference](https://github.com/CDCgov/ww-inference-model) package.
 
-## Public Domain Standard Notice
+There are worked examples and commented code in order to and format simulated data, provided by the Washington State Department of Health. This is done in order to fit **ww-inference** models of wastewater concentration and hospital admissions data in order to provide estimates of Rt, and forecast hospital admissions and wastewater concentration.
+
+As this is specifically designed to work with simulated data provided by the Washington State Department of Health, there are numerous custom functions designed to streamline formatting, running, and analysis of model. This is done in order to assess the potential improvements to forecasting accuracy, that the inclusion of  wastewater data may provide. We also assess the potential improvements to forecasting accuracy that spatial correlations between wastewater catchment areas may provide.
+
+## Layout of repository
+
+The repository is organised as follows:
+
+## Notices and disclaimers
+
+### Public Domain Standard Notice
 This repository constitutes a work of the United States Government and is not
 subject to domestic copyright protection under 17 USC § 105. This repository is in
 the public domain within the United States, and copyright and related rights in
@@ -15,7 +25,7 @@ All contributions to this repository will be released under the CC0 dedication. 
 submitting a pull request you are agreeing to comply with this waiver of
 copyright interest.
 
-## License Standard Notice
+### License Standard Notice
 The repository utilizes code licensed under the terms of the Apache Software
 License and therefore is licensed under ASL v2 or later.
 
@@ -32,14 +42,14 @@ program. If not, see http://www.apache.org/licenses/LICENSE-2.0.html
 
 The source code forked from other open source projects will inherit its license.
 
-## Privacy Standard Notice
+### Privacy Standard Notice
 This repository contains only non-sensitive, publicly available data and
 information. All material and community participation is covered by the
 [Disclaimer](DISCLAIMER.md)
 and [Code of Conduct](code-of-conduct.md).
 For more information about CDC's privacy policy, please visit [http://www.cdc.gov/other/privacy.html](https://www.cdc.gov/other/privacy.html).
 
-## Contributing Standard Notice
+### Contributing Standard Notice
 Anyone is encouraged to contribute to the repository by [forking](https://help.github.com/articles/fork-a-repo)
 and submitting a pull request. (If you are new to GitHub, you might start with a
 [basic tutorial](https://help.github.com/articles/set-up-git).) By contributing
@@ -51,7 +61,7 @@ later.
 All comments, messages, pull requests, and other submissions received through
 CDC including this GitHub page may be subject to applicable federal law, including but not limited to the Federal Records Act, and may be archived. Learn more at [http://www.cdc.gov/other/privacy.html](http://www.cdc.gov/other/privacy.html).
 
-## Records Management Standard Notice
+### Records Management Standard Notice
 This repository is not a source of government records, but is a copy to increase
 collaboration and collaborative potential. All government records will be
 published through the [CDC web site](http://www.cdc.gov).
