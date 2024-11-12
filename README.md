@@ -69,7 +69,7 @@ This folder contains the summary information for completed instances of `WA_nons
 * _forecasts.jpg
   - Visualizations of the wastewater and hospitalization forecasts. An individual plot for each run is present, and for wastewater an individual plot for each site as well.
 * scoring_.csv
-  - Scores from [scoringutils]((https://epiforecasts.io/scoringutils/index.html) on the aggregate data.
+  - Scores from [scoringutils](https://epiforecasts.io/scoringutils/index.html) on the aggregate data.
 * diagnostics.csv
   - Model diagnostics for each run.
 
