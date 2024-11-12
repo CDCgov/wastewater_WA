@@ -14,6 +14,65 @@ As this is specifically designed to work with simulated data provided by the Was
 
 The repository is organised as follows:
 
+![github_diagram](https://github.com/user-attachments/assets/1a490d1b-5f00-457c-8dd0-dce1c21aa43f)
+
+Additional files and folders may be present, but we will focus on these folders, and the three R scripts (ending with .R) that are listed here.
+
+### data and simulated
+
+This folder is where all files that are imported into R should be stored. Within this folder there is a subfolder called *simulated*. The files usually contained within this folder have not been shared, but refer to the simulated data provided by the Washington State Department of Health. No real datasets, or datasets with identifiable information should be stored here, or uploaded to GitHub.
+
+### R, scripts and functions
+
+Here we store all of our R scripts, and custom functions that are required to clean, run and analyze our models. Self contained functions are stored in the *functions* folder and scripts for running through the data and functions are found within *scripts*.
+
+Within the *scripts* folder, there are three .R files, "1_assess_nonspatial_state", "2_assess_nonspatial_substate" and "3_assess_spatial_state".
+
+* 1_assess_nonspatial_state.R
+  - This is the initial script that we run in order to assess the affect of including wastewater data on the accuracy of forecasts of wastewater concentration and hospital admissions.
+  - The script makes sure the correct **ww-inference** package version has been installed, loads packages and data, compiles the [stan](https://mc-stan.org/) model which fits the data, and then runs our analysis with the custom function `WA_nonspatial_run()`.
+  - There are numerous ways to customise and adapt `WA_nonspatial_run` which are specified in the function code comments. The current set up is that you will run the model on every site included in the data. Then we will randomly select 10 different windows of data, which are termed "repeats" to get several different epidemic trajectories. Each window is 118 days, fitting the model to 90, and predicting to 28. The approach will then run through the 10 different windows, and assess the overall model fit across the different windows. Numerous csv files and image files will be output, which are further explained in the output section. **Important:** Please specify a unique and specific "savename" as this is used to create folders and outputs from each model run. 
+* 2_assess_nonspatial_state.R
+  - This runs the same function as above (`WA_nonspatial_run()`) but loops through each site individually.
+* 3_assess_spatial_state.R
+  - Here we make sure the spatial-branch of the **ww-inference** package is installed. From here, we specify the model as in previous scripts, but use the function `WA_spatial_run()` to carry out our analysis. This function compares a model not using spatial information for the wastewater data, with two different spatial correlations ([exponential](https://en.wikipedia.org/wiki/Exponential_function) and a [Lewandowski-Kurowicka-Joe distribution (LKJ)](https://en.wikipedia.org/wiki/Lewandowski-Kurowicka-Joe_distribution)).
+
+### output
+
+Within the folder *output* there is two further folders, *full_data* and *summary*. When you run the `WA_nonspatial_run()` and `WA_spatial_run()` functions it will create a folder within each of these with the text you have specified in the `savename = ` argument. 
+
+*full_data*
+
+This folder contains all of the individual model runs that are created as you loop through each run. For every run you will create a series of files, these will include the name "hosp" if they related to hospitalization forecasts, or "ww" if they relate to wastewater forecasts:
+
+* _diagnostics.csv
+  - This file contains a number of diagnostic tests to ensure the model ran succesfully. If any of these diagnostics are `TRUE`, it may indicate the model poorly fit. Please see [here](https://github.com/CDCgov/ww-inference-model/blob/main/R/model_diagnostics.R) for more detail.
+* _modelscore.csv
+  - This file contains a number of scoring variables to assess model fit. See [here](https://epiforecasts.io/scoringutils/index.html) for further detail.
+* _rawpredictions.csv
+  - These are the raw predictions of the model, this data is aggregated after all runs have been completed to assess model performance across multiple epidemic trajectories. **Note** you cannot open these files directly into excel, they have been encoded to reduce the filesize, however they will read into R normally.
+* _site_correlation.csv
+  - This will only be present in runs that use the `WA_spatial_run()` function but refer to the correlation in predictions found when using a spatial relationship between wastewater catchment sites.
+* _timetaken.csv
+  - This is the time taken to run the model.
+* _correlations.jpg
+  - A visual representation of the correlations found.
+* _forecast.jpg
+  - A graph comparing forecasts with the data. For the `WA_nonspatial_run()` outputs, this will compare the model using wastewater data with the model without wastewater data. For the outputs of `WA_spatial_run()` this will compare models without spatial information with those using an exponential relationship and those with a LKJ relationship.
+  
+*summary*
+
+This folder contains the summary information for completed instances of `WA_nonspatial_run()` and `WA_spatial_run()`. Here the overall assessments of the different model types are made, and the results displayed in aggregate. The files are as follows
+
+* key.csv
+  - This file contains the specific sites investigated, the forecast and calibration times, the number of repeats, the savename and the start date of each temporal window.
+* _forecasts.jpg
+  - Visualizations of the wastewater and hospitalization forecasts. An individual plot for each run is present, and for wastewater an individual plot for each site as well.
+* scoring_.csv
+  - Scores from [**scoringutils**]((https://epiforecasts.io/scoringutils/index.html) on the aggregate data.
+* diagnostics.csv
+  - Model diagnostics for each run.
+
 ## Notices and disclaimers
 
 ### Public Domain Standard Notice
