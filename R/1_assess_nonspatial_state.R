@@ -37,7 +37,7 @@ pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
 #Added the argument update_files so that if the prior version of the package is different to the current, it does a fresh
 #move of the files. The stan files can be different between package versions.
-compiled_model <- compile_model_upd(update_files = prior != current)
+compiled_model <- compile_model_upd(update_files = T)
 
 #Specify fit options
 fit_this <- get_mcmc_options(

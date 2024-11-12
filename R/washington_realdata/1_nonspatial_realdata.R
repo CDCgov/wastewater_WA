@@ -1,10 +1,10 @@
 #Install pacman if missing
 if(!require(pacman)) install.packages("pacman")
 
-#If you have installed the NON-SPATIAL version of the package, then re-install the spatial branch
+#If you have installed a NON-MAIN branch version of the package, then re-install the main branch
 prior <- packageDescription("wwinference")$GithubRef
-if(packageDescription("wwinference")$GithubRef != "spatial-main"){
-  devtools::install_github("CDCgov/ww-inference-model@spatial-main")
+if(packageDescription("wwinference")$GithubRef != "HEAD"){
+  devtools::install_github("CDCgov/ww-inference-model")
 }
 current <- packageDescription("wwinference")$GithubRef
 
@@ -14,8 +14,8 @@ pacman::p_load(
   here,
   arrow,
   wwinference,
-  ggnewscale,
   scoringutils,
+  ggnewscale,
   data.table,
   ggh4x,
   openxlsx,
@@ -33,10 +33,10 @@ hospital_counts <- import(here("data", "WA", "simulated_hospital_counts.csv"))
 ww_data <- import(here("data", "WA", "simulated_ww_data.csv"))
 #Population data for each catchment
 pop_data <- import(here("data", "WA", "simulated_catchment_populations.csv"))
-#Normalized distance between each wastewater facility
-facility_distance <- import(here("data", "WA", "simulated_facility_distances.csv"))
 
 #Compile model - have to specify a specific location for windows computers where there is no space (i.e. no /Program Files/)
+#Added the argument update_files so that if the prior version of the package is different to the current, it does a fresh
+#move of the files. The stan files can be different between package versions.
 compiled_model <- compile_model_upd(update_files = T)
 
 #Specify fit options
@@ -50,11 +50,8 @@ fit_this <- get_mcmc_options(
 #We are going to split the dataset into 118 day chunks (90 days calibration, 28 days prediction), and then run the model on each chunk and evaluate the fit
 set.seed(1)
 
-#Set the number of cores
-options(mc.cores = min(8, parallel::detectCores()))
-
 #Run through the shuffle of dates
-WA_spatial_run(
+WA_nonspatial_run(
   #Raw hospital data
   raw_hospital_counts = hospital_counts,         
   #Raw wastewater data
@@ -71,14 +68,12 @@ WA_spatial_run(
   calibration_time = 90,               
   #How many shuffles of data we want to repeat this on
   repeats = 10,  
-  #Save name modifier for file output
-  savename = "spatial_state",    
+  #Savename modifier for file output
+  savename = "nonspatial_realdata",    
   #Model fit options - specified above
   fit_options = fit_this,
   #The compiled model
-  compiled_model = compiled_model,
-  #Spatial data
-  spatial = facility_distance
+  compiled_model = compiled_model
 )
 
 

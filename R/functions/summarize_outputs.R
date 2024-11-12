@@ -14,14 +14,7 @@ summarize_outputs <- function(
     if(does_ww_data_exist){
 
       #Set up wastewater dataset
-      ww_raw_data <- if(packageDescription("wwinference")$GithubRef == "spatial-main"){
-        get_draws_df(model_list[[x]]) %>% filter(name == "predicted wastewater") %>%
-          rename(
-            site = lab
-          )
-      } else {
-        get_draws(model_list[[x]])$predicted_ww
-      }
+      ww_raw_data <-  get_draws(model_list[[x]])$predicted_ww
       
       ww_draws <- ww_raw_data %>%
         rename(
@@ -76,14 +69,7 @@ summarize_outputs <- function(
       )
     
     #Get model draws
-    hosp_raw_data <- if(packageDescription("wwinference")$GithubRef == "spatial-main"){
-      get_draws_df(model_list[[x]]) %>% filter(name == "predicted counts") %>%
-        rename(
-          site = lab
-        )
-    } else {
-      get_draws(model_list[[x]])$predicted_counts
-    }
+    hosp_raw_data <- get_draws(model_list[[x]])$predicted_counts
     
     draws <- hosp_raw_data %>%
       mutate(

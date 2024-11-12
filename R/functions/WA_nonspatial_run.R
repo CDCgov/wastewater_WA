@@ -154,18 +154,53 @@ WA_nonspatial_run <- function(
       )
       
       # Create figures and score models -----------------------------------------
+      hospitalization_forecasts_object <- processed_outputs[[1]] %>%
+        rename(
+          observed = true_value,
+          predicted = prediction,
+          sample_id = sample
+        ) %>%
+        as_forecast_sample(
+          forecast_unit = c(
+            "date", "model", "forecast_or_fit"
+          )
+        )
+      
+      wastewater_forecasts_object <- processed_outputs[[4]] %>%
+        rename(
+          observed = true_value,
+          predicted = prediction,
+          sample_id = sample
+        ) %>%
+        as_forecast_sample(
+          forecast_unit = c(
+            "date", "model", "forecast_or_fit", "site"
+          )
+        ) 
+      
+      attr(hospitalization_forecasts_object, "metrics") <- c(
+        "bias", "dss", "crps", "overprediction",
+        "underprediction", "dispersion", "log_score",
+        "mad", "ae_median", "se_mean"
+      )
+      
+      attr(wastewater_forecasts_object, "metrics") <- c(
+        "bias", "dss", "crps", "overprediction",
+        "underprediction", "dispersion", "log_score",
+        "mad", "ae_median", "se_mean"
+      )
+      
       
       #Score models on hospitalization forecasting
-      hospitalization_forecasts <- processed_outputs[[1]] %>%
-        score(metrics = c("mad", "bias", "dss", "crps", "ae_median", "se_mean", "log_score")) %>%
+      hospitalization_forecasts <- hospitalization_forecasts_object %>%
+        score() %>%
         summarise_scores(by = c("model",
                                 "forecast_or_fit"))
       
       #Score model on wastewater forecasting
-      wastewater_forecasts <- processed_outputs[[4]] %>%
-        drop_na(true_value) %>%
-        score(metrics = c("mad", "bias", "dss", "crps", "ae_median", "se_mean", "log_score")) %>%
-        summarise_scores(by = "forecast_or_fit")
+      wastewater_forecasts <- wastewater_forecasts_object %>%
+        score() %>%
+        summarise_scores(by = c("model", "forecast_or_fit"))
       
       #Plot hospitalization forecast
       hospitalization_forecast <- ggplot(
@@ -289,7 +324,7 @@ WA_nonspatial_run <- function(
                     run = x
                   ),
                 file = paste0(folder_full, "run_", x, "_of_", length(random_dates), "_hosp_rawpredictions.csv"),
-                encoding = "gzip")
+             compress = "gzip")
       
       #Output full raw predictions for wastewater data - using fwrite and gzip compression to reduce filesize by 100x
       #however it means that you cant open the file directly in excel
@@ -298,7 +333,7 @@ WA_nonspatial_run <- function(
                     run = x
                   ),
                 file = paste0(folder_full, "run_", x, "_of_", length(random_dates), "_ww_rawpredictions.csv"),
-                encoding = "gzip")
+             compress = "gzip")
       
       #Output model scores
       write.csv(x = hospitalization_forecasts %>%
@@ -359,23 +394,58 @@ WA_nonspatial_run <- function(
   }, simplify = FALSE))
   
   #Model score 
-  model_score_raw_hosp <- all_rawpred_hosp %>%
-    score(metrics = c("mad", "bias", "dss", "crps", "ae_median", "se_mean", "log_score")) %>%
+  #Model score 
+  all_rawpred_hosp_object <- all_rawpred_hosp %>%
+    rename(
+      observed = true_value,
+      predicted = prediction,
+      sample_id = sample
+    ) %>%
+    as_forecast_sample(
+      forecast_unit = c(
+        "date", "model", "forecast_or_fit", "run"
+      )
+    ) 
+  
+  attr(all_rawpred_hosp_object, "metrics") <- c(
+    "bias", "dss", "crps", "overprediction",
+    "underprediction", "dispersion", "log_score",
+    "mad", "ae_median", "se_mean"
+  )
+  
+  model_score_raw_hosp <- all_rawpred_hosp_object %>%
+    score() %>%
     summarise_scores(by = c("model", "forecast_or_fit")) %>%
-    rbind(all_rawpred_hosp %>%
-            score() %>%
-            summarise_scores(by = "model") %>%
-            mutate(forecast_or_fit = "All")) %>%
     arrange(forecast_or_fit, model)
   
-  model_score_raw_ww <- all_rawpred_ww %>%
-    score(metrics = c("mad", "bias", "dss", "crps", "ae_median", "se_mean", "log_score")) %>%
-    summarise_scores(by = c("site", "forecast_or_fit")) %>%
-    rbind(all_rawpred_ww %>%
-            score(metrics = c("mad", "bias", "dss", "crps", "ae_median", "se_mean", "log_score")) %>%
-            summarise_scores(by = "site") %>%
-            mutate(forecast_or_fit = "All")) %>%
-    arrange(forecast_or_fit, site)
+  #Now for wastewater
+  all_rawpred_ww_object <- all_rawpred_ww %>%
+    rename(
+      observed = true_value,
+      predicted = prediction,
+      sample_id = sample
+    ) %>%
+    as_forecast_sample(
+      forecast_unit = c(
+        "date", "model", "forecast_or_fit", "run", "site"
+      )
+    ) 
+  
+  model_score_raw_ww <- all_rawpred_ww_object %>%
+    score() %>%
+    summarise_scores(by = c("site", "forecast_or_fit", "model")) %>%
+    arrange(forecast_or_fit, site, model)
+  
+  model_score_raw_all <- all_rawpred_ww_object %>%
+    score() %>%
+    summarise_scores(by = c("forecast_or_fit", "model")) %>%
+    mutate(site = "All") %>%
+    arrange(forecast_or_fit, site, model)
+  
+  model_score_raw_ww <- rbind(
+    model_score_raw_ww,
+    model_score_raw_all
+  )
   
   #What is the order of runs in time
   order_of_runs_date <- data.frame(run = all_rawpred_hosp$run, date = all_rawpred_hosp$date) %>%

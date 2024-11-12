@@ -17,9 +17,11 @@ compile_model_upd <- function(custom_location = F, update_files = F){
       #Put back together above the portion with a 
       new_folder <- paste0(if(custom_location == T) custom_location else reconstructed_path, "/wastewater_stan_files/")
       
-      #Create directory
-      if(!dir.exists(new_folder)) dir.create(new_folder)
-      
+      #Delete directory if it exists
+      unlink(new_folder, recursive = TRUE)
+      #Recreate directory
+      dir.create(new_folder)
+
       #List files to move
       these_files_to_move <- list.files(dirname(stan_location), full.names = T)
       

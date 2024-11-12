@@ -72,7 +72,7 @@ WA_spatial_run(
   #How many shuffles of data we want to repeat this on
   repeats = 10,  
   #Save name modifier for file output
-  savename = "spatial_state",    
+  savename = "spatial_realdata",    
   #Model fit options - specified above
   fit_options = fit_this,
   #The compiled model
