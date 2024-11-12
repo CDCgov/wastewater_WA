@@ -4,6 +4,6 @@
 .Ruserdata
 data/WA/
 R/archive/
-figs/date_shuffle/
+figs/date_shuffle
 slides
 output/model_runs/full_data
