@@ -2,11 +2,9 @@
 if(!require(pacman)) install.packages("pacman")
 
 #If you have installed the NON-SPATIAL version of the package, then re-install the spatial branch
-prior <- packageDescription("wwinference")$GithubRef
 if(packageDescription("wwinference")$GithubRef != "spatial-main"){
   devtools::install_github("CDCgov/ww-inference-model@spatial-main")
 }
-current <- packageDescription("wwinference")$GithubRef
 
 #Load packages
 pacman::p_load(
@@ -62,7 +60,9 @@ WA_spatial_run(
   #Population by catchment
   pop_data,
   #If listing individual sites, combine with ; (i.e. 2;3;4)
-  sites = "all",                         
+  sites = "all",               
+  #Repeat subset
+  repeat_subset = "9",
   #WA population
   WA_population = 7786000,    
   #Number of days you are going to predict to
@@ -72,7 +72,7 @@ WA_spatial_run(
   #How many shuffles of data we want to repeat this on
   runs = 10,  
   #Save name modifier for file output
-  savename = "spatial_state",    
+  savename = "spatial_parameter_update",    
   #Model fit options - specified above
   fit_options = fit_this,
   #The compiled model

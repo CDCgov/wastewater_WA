@@ -63,7 +63,7 @@ WA_spatial_run <- function(
   these_runs <- 1:length(random_dates)
   
   if(!is.na(repeat_subset)){
-    these_runs <- as.numeric(unlist(strsplit(repeat_subset, ";")))
+    these_runs <- as.numeric(unlist(strsplit(as.character(repeat_subset), ";")))
   }
   
   # Loop through runs ----------------------------------------------------
@@ -617,6 +617,13 @@ WA_spatial_run <- function(
     group_by(site, forecast_or_fit, metric) %>%
     mutate(no_correlation_value = value[model == "No correlation"])
   
+  hosp_score_gathered <- model_score_raw_all %>%
+    gather(bias:se_mean,
+           key = "metric",
+           value = "value") %>%
+    group_by(forecast_or_fit, metric) %>%
+    mutate(no_correlation_value = value[model == "No correlation"])
+  
   ww_score_gathered_format <- ww_score_gathered %>%
     group_by(site, metric, forecast_or_fit, model) %>%
     mutate(difference = 100 * (abs(no_correlation_value) - abs(value))/abs(value)) %>%
@@ -637,6 +644,23 @@ WA_spatial_run <- function(
       site = factor(site, levels = c("All", sort(as.numeric(unique(ww_score_gathered$site))))),
       metric_model = paste(metric, model, sep = " - ")
     )
+  
+  hosp_score_gathered_format <- hosp_score_gathered %>%
+    group_by(site, metric, forecast_or_fit, model) %>%
+    mutate(difference = 100 * (abs(no_correlation_value) - abs(value))/abs(value)) %>%
+    filter(model != "No correlation") %>%
+    mutate(metric_full = case_when(
+      metric == "mad" ~ "Mean absolute deviation",
+      metric == "bias" ~ "Bias",
+      metric == "dss" ~ "Dawid-Sebastiani score",
+      metric == "crps" ~ "Ranked Probability score",
+      metric == "ae_median" ~ "Absolute error (median)",
+      metric == "se_mean" ~ "Standard error (mean)",
+      metric == "log_score" ~ "Log score",
+      metric == "overprediction" ~ "Overprediction",
+      metric == "underprediction" ~ "Underprediction",
+      metric == "dispersion" ~ "Dispersion"
+    ))
   
   #Generate overall plot
   metric_better_plot <- ggplot(
@@ -666,6 +690,54 @@ WA_spatial_run <- function(
          fill = "% metric improvement\nfrom wastewater data") +
     theme_bw() +
     facet_wrap(~model, ncol = 1)
+  
+  metric_better_plot_hosp <- ggplot(
+    data = hosp_score_gathered_format %>%
+      filter(forecast_or_fit == "Forecast"),
+    mapping = aes(
+      x = model,
+      y = metric_full,
+      fill = difference
+    )
+  ) +
+    geom_tile() +
+    labs("% spatial improvement") +
+    colorspace::scale_fill_continuous_divergingx(
+      palette = 'RdBu', 
+      mid = 0.0, 
+      p1 = 0.5,
+      p2 = 0.75,
+      # l3 = 0,
+      # p3 = .5,
+      p4 = 1,
+      rev = T
+    ) +
+    labs(x = "Site",
+         y = "",
+         fill = "% metric improvement\nfrom wastewater data") +
+    theme_bw() +
+    facet_wrap(~model, ncol = 1)
+  
+  
+  
+  ggplot(
+    data = hosp_score_gathered_format %>%
+      filter(forecast_or_fit == "Forecast" &
+               metric_full != "Bias"),
+    mapping = aes(
+      y = metric_full,
+      x = difference,
+      color = model
+    )
+  ) +
+    geom_point() +
+    labs("% spatial improvement") +
+    labs(y = "",
+         color = "",
+         x = "% metric improvement\nfrom wastewater data") +
+    theme_bw() +
+    theme(axis.text = element_text(angle = 0)) +
+    geom_vline(xintercept = 0, linetype = "dashed")
   
   # Output summary plots and statistics -------------------------------------
   

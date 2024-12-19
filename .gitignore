@@ -12,3 +12,4 @@ data/simulated/simulated_facility_distances.csv
 data/simulated/simulated_hospital_counts.csv
 data/simulated/simulated_ww_data.csv
 R/bug_testing
+figs/spatial_paper/

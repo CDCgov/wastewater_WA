@@ -82,7 +82,7 @@ process_WA_data <- function(
     ) %>%
     mutate(
       log_genome_copies_per_ml = log(simulated_raw_concentration),
-      log_lod = 5,
+      log_lod = 5,      #This is currently arbitrary - should be updated with correct value
       site = lab
     ) %>%
     left_join(
