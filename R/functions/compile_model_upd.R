@@ -8,11 +8,11 @@ compile_model_upd <- function(custom_location = F, update_files = F){
                                  package = "wwinference")
     
     #Do they include a space in the file path?
-    if(grepl(" ", stan_location) & update_files == T){
+    if(grepl(" ", stan_location) | update_files == T){
       #Deconstruct path
       deconstructed_path <- unlist(strsplit(stan_location, "/"))
       #Reconstructed path
-      reconstructed_path <- deconstructed_path[1:which(grepl(" ", deconstructed_path))-1]
+      reconstructed_path <- if(grepl(" ", stan_location)) deconstructed_path[1:which(grepl(" ", deconstructed_path))-1] else deconstructed_path
       
       #Put back together above the portion with a 
       new_folder <- paste0(if(custom_location == T) custom_location else reconstructed_path, "/wastewater_stan_files/")
