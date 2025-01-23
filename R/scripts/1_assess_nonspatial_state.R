@@ -59,7 +59,6 @@ WA_nonspatial_run(
   #If listing individual sites, combine with ; (i.e. 2;3;4)
   sites = "all",
   #Repeat subset
-  repeat_subset = "9",
   #WA population
   WA_population = 7786000,    
   #Number of days you are going to predict to
