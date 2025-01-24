@@ -15,7 +15,7 @@ compile_model_upd <- function(custom_location = F, update_files = F){
       reconstructed_path <- if(grepl(" ", stan_location)) deconstructed_path[1:which(grepl(" ", deconstructed_path))-1] else deconstructed_path
       
       #Put back together above the portion with a 
-      new_folder <- paste0(if(custom_location != F) custom_location else reconstructed_path, "/wastewater_stan_files/", collapse = "")
+      new_folder <- paste0(if(custom_location != F) custom_location else paste0(paste0(reconstructed_path, collapse = "/" ), "/wastewater_stan_files/")[1] )
       new_folder <- gsub("//", "/", new_folder)
       
       #Delete directory if it exists
